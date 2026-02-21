@@ -57,18 +57,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
-		case "K":
+		case "K", "L", "H", "J", "l":
 			m.homeModel, cmd = m.homeModel.Update(msg)
 			cmds = append(cmds, cmd)
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "J":
-			m.homeModel, cmd = m.homeModel.Update(msg)
-			cmds = append(cmds, cmd)
-			if m.cursor < len(m.currViews) {
-				m.cursor++
-			}
 		case "j", "k", "up", "down":
 			if m.currViews[m.cursor] == "list" {
 				m.homeModel, cmd = m.homeModel.Update(msg)
@@ -98,6 +89,14 @@ func main() {
 		log.Fatal(err)
 		return
 	}
+
+	f, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
+	defer f.Close()
+
 	mainModel := initialModel()
 	controller, _ := bubblon.New(mainModel)
 	program := tea.NewProgram(controller, tea.WithAltScreen())

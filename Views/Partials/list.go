@@ -7,16 +7,16 @@ import (
 )
 
 type ListModel struct {
-	style lipgloss.Style // TODO: This probably shouldn't be public
+	style lipgloss.Style
 	table table.Model
 }
 
-func (m ListModel) selectView() {
-	m.style = m.style.BorderForeground(lipgloss.Color("#6E3F00"))
+func (m ListModel) selectView() lipgloss.Style {
+	return m.style.BorderForeground(lipgloss.Color("#D17600"))
 }
 
-func (m ListModel) deselectView() {
-	m.style = m.style.BorderForeground(lipgloss.Color("#6E3F00"))
+func (m ListModel) deselectView() lipgloss.Style {
+	return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
 }
 
 func InitialList(width int, height int, cols []table.Column, rows []table.Row) ListModel {
@@ -68,13 +68,14 @@ func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 			} else {
 				m.table.Focus()
 			}
-		case "J":
-			m.style = m.style.BorderForeground(lipgloss.Color("#D17600"))
-		case "K":
-			m.style = m.style.BorderForeground(lipgloss.Color("#6E3F00"))
+		case "L":
+			m.style = m.selectView()
+			m.table, cmd = m.table.Update(msg)
+		case "H":
+			m.style = m.deselectView()
+			m.table, cmd = m.table.Update(msg)
 		}
 	}
-	m.table, cmd = m.table.Update(msg)
 	return m, cmd
 }
 

@@ -1,9 +1,5 @@
 package views
 
-// These imports will be used later on the tutorial. If you save the file
-// now, Go might complain they are unused, but that's fine.
-// You may also need to run `go mod tidy` to download bubbletea and its
-// dependencies.
 import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -27,11 +23,11 @@ var (
 type HomeModel struct {
 	sidebarCursor int
 	mainCursor    int
-	sidebarViews  []partials.ViewModel
-	listModel     partials.ListModel
-	addModel      partials.AddModel
-	filterModel   partials.FilterModel
-	sortModel     partials.SortModel
+	//sidebarViews  []partials.ViewModel
+	listModel   partials.ListModel
+	addModel    partials.AddModel
+	filterModel partials.FilterModel
+	sortModel   partials.SortModel
 }
 
 func InitialHome(width int, height int) HomeModel {
@@ -52,13 +48,13 @@ func InitialHome(width int, height int) HomeModel {
 	filter := partials.InitialFilter(height - (10))
 	sort := partials.InitialSort(3)
 
-	sidebarList := make([]partials.ViewModel, 3)
-	sidebarList[0] = add
-	sidebarList[1] = filter
-	sidebarList[2] = sort
+	//sidebarList := make([]partials.ViewModel, 3)
+	//sidebarList[0] = add
+	//sidebarList[1] = filter
+	//sidebarList[2] = sort
 
 	return HomeModel{
-		sidebarViews:  sidebarList,
+		//sidebarViews:  sidebarList,
 		listModel:     list,
 		addModel:      add,
 		filterModel:   filter,
@@ -81,9 +77,7 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 		m.listModel, cmd = m.listModel.Update(msg)
 		m.filterModel, cmd = m.filterModel.Update(msg)
 	case tea.KeyMsg:
-
 		switch msg.String() {
-
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
@@ -101,27 +95,25 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 				cmds = append(cmds, cmd)
 				m.listModel, cmd = m.listModel.Update(msg)
 				cmds = append(cmds, cmd)
-				if m.sidebarCursor < len(m.sidebarViews) {
+				/*if m.sidebarCursor < len(m.sidebarViews) {
 					m.sidebarCursor++
-				}
+				}*/
 			}
 		case "H":
 			if m.mainCursor > 0 {
 				m.mainCursor--
 				m.listModel, cmd = m.listModel.Update(msg)
-			}
-			cmds = append(cmds, cmd)
-			m.listModel, cmd = m.listModel.Update(msg)
-			cmds = append(cmds, cmd)
-			if m.mainCursor < 1 {
-				m.sidebarCursor++
+				cmds = append(cmds, cmd)
+				m.addModel, cmd = m.addModel.Update(msg)
+				cmds = append(cmds, cmd)
 			}
 		case "L":
-			cmds = append(cmds, cmd)
-			m.listModel, cmd = m.listModel.Update(msg)
-			cmds = append(cmds, cmd)
-			if m.sidebarCursor < len(m.sidebarViews) {
-				m.sidebarCursor++
+			if m.mainCursor < 1 {
+				m.mainCursor++
+				m.listModel, cmd = m.listModel.Update(msg)
+				cmds = append(cmds, cmd)
+				m.addModel, cmd = m.addModel.Update(msg)
+				cmds = append(cmds, cmd)
 			}
 		case "j", "k", "up", "down":
 			if m.mainCursor == 1 {
