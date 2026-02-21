@@ -6,21 +6,22 @@ import (
 )
 
 type FilterModel struct {
-	text  string
-	style lipgloss.Style
+	text     string
+	selected bool
+	style    lipgloss.Style
 }
 
-func (m FilterModel) selectView() {
-	m.style = m.style.BorderForeground(lipgloss.Color("#6E3F00"))
-}
-
-func (m FilterModel) deselectView() {
-	m.style = m.style.BorderForeground(lipgloss.Color("#6E3F00"))
+func (m FilterModel) toggleBorder() lipgloss.Style {
+	if m.selected == true {
+		return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
+	}
+	return m.style.BorderForeground(lipgloss.Color("#D17600"))
 }
 
 func InitialFilter(height int) FilterModel {
 	return FilterModel{
-		text: "Filter",
+		text:     "Filter",
+		selected: false,
 		style: lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("#6E3F00")).
@@ -39,6 +40,12 @@ func (m FilterModel) Update(msg tea.Msg) (FilterModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.style = m.style.Height(msg.Height - (9))
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "L", "H", "J", "K":
+			m.style = m.toggleBorder()
+			m.selected = !m.selected
+		}
 	}
 	return m, nil
 }

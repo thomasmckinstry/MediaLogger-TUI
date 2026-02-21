@@ -70,9 +70,9 @@ func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
 			}
 		case "L":
 			m.style = m.selectView()
-			m.table, cmd = m.table.Update(msg)
 		case "H":
 			m.style = m.deselectView()
+		case "j", "k", "up", "down":
 			m.table, cmd = m.table.Update(msg)
 		}
 	}

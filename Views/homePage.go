@@ -82,38 +82,70 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 			return m, tea.Quit
 
 		case "K":
-			if m.mainCursor == 0 {
-				cmds = append(cmds, cmd)
-				m.listModel, cmd = m.listModel.Update(msg)
-				cmds = append(cmds, cmd)
-				if m.sidebarCursor > 0 {
-					m.sidebarCursor--
+			if m.mainCursor == 0 && m.sidebarCursor > 0 {
+				m.sidebarCursor--
+				switch m.sidebarCursor {
+				case 0:
+					m.addModel, cmd = m.addModel.Update(msg)
+					cmds = append(cmds, cmd)
+					m.filterModel, cmd = m.filterModel.Update(msg)
+					cmds = append(cmds, cmd)
+				case 1:
+					m.filterModel, cmd = m.filterModel.Update(msg)
+					cmds = append(cmds, cmd)
+					m.sortModel, cmd = m.sortModel.Update(msg)
+					cmds = append(cmds, cmd)
 				}
 			}
 		case "J":
-			if m.mainCursor == 0 {
-				cmds = append(cmds, cmd)
-				m.listModel, cmd = m.listModel.Update(msg)
-				cmds = append(cmds, cmd)
-				/*if m.sidebarCursor < len(m.sidebarViews) {
-					m.sidebarCursor++
-				}*/
+			if m.mainCursor == 0 && m.sidebarCursor < 2 {
+				m.sidebarCursor++
+				switch m.sidebarCursor {
+				case 1:
+					m.addModel, cmd = m.addModel.Update(msg)
+					cmds = append(cmds, cmd)
+					m.filterModel, cmd = m.filterModel.Update(msg)
+					cmds = append(cmds, cmd)
+				case 2:
+					m.filterModel, cmd = m.filterModel.Update(msg)
+					cmds = append(cmds, cmd)
+					m.sortModel, cmd = m.sortModel.Update(msg)
+					cmds = append(cmds, cmd)
+				}
 			}
 		case "H":
 			if m.mainCursor > 0 {
 				m.mainCursor--
 				m.listModel, cmd = m.listModel.Update(msg)
 				cmds = append(cmds, cmd)
-				m.addModel, cmd = m.addModel.Update(msg)
-				cmds = append(cmds, cmd)
+				switch m.sidebarCursor {
+				case 0:
+					m.addModel, cmd = m.addModel.Update(msg)
+					cmds = append(cmds, cmd)
+				case 1:
+					m.filterModel, cmd = m.filterModel.Update(msg)
+					cmds = append(cmds, cmd)
+				case 2:
+					m.sortModel, cmd = m.sortModel.Update(msg)
+					cmds = append(cmds, cmd)
+				}
 			}
 		case "L":
 			if m.mainCursor < 1 {
 				m.mainCursor++
 				m.listModel, cmd = m.listModel.Update(msg)
 				cmds = append(cmds, cmd)
-				m.addModel, cmd = m.addModel.Update(msg)
-				cmds = append(cmds, cmd)
+				switch m.sidebarCursor {
+				case 0:
+					m.addModel, cmd = m.addModel.Update(msg)
+					cmds = append(cmds, cmd)
+				case 1:
+					m.filterModel, cmd = m.filterModel.Update(msg)
+					cmds = append(cmds, cmd)
+				case 2:
+					m.sortModel, cmd = m.sortModel.Update(msg)
+					cmds = append(cmds, cmd)
+				}
 			}
 		case "j", "k", "up", "down":
 			if m.mainCursor == 1 {

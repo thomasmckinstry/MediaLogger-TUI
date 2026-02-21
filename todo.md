@@ -1,12 +1,15 @@
 # Tasks:
 ## Frontend:
 - [ ] Create global styles.
-- [ ] Implement home page mockup in Bubbletea.
-    - [ ] Style Add Panel
-    - [ ] Style Filter Panel
-    - [ ] Style Sort Panel
-- [ ] Implement cursor moving between sections.
+- [x] Implement home page mockup in Bubbletea.
+    - [x] Style Add Panel
+    - [x] Style Filter Panel
+    - [x] Style Sort Panel
+- [x] Implement cursor moving between sections.
     - This should use H, J, K, L in the directions expected by nvim.
+    - [x] Cursor moves between add and list.
+    - [x] Allow Cursor to move vertically.
+    - [x] Cursor move from any sidebar partial and the list, and correctly select the same sidebar view when moving back.
 - [ ] Add relevant columns to table.
 - [ ] Make table size columns automatically, truncate past a certain amount of characters.
 
@@ -14,3 +17,7 @@
 - [ ] Create SQL Database.
     - [ ] Write code for generating SQLite database.
     - [ ] Write code for "connecting" to SQLite database.
+
+## External:
+- [ ] Keep processing my existing watchlist.
+- [ ] Look into a copyleft license.

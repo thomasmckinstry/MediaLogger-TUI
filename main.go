@@ -57,11 +57,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
-		case "K", "L", "H", "J", "l":
+		case "K", "L", "H", "J":
 			m.homeModel, cmd = m.homeModel.Update(msg)
 			cmds = append(cmds, cmd)
 		case "j", "k", "up", "down":
-			if m.currViews[m.cursor] == "list" {
+			if m.currViews[m.cursor] == "home" {
 				m.homeModel, cmd = m.homeModel.Update(msg)
 			}
 			cmds = append(cmds, cmd)

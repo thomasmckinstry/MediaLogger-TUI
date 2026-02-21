@@ -6,21 +6,22 @@ import (
 )
 
 type SortModel struct {
-	text  string
-	style lipgloss.Style
+	text     string
+	selected bool
+	style    lipgloss.Style
 }
 
-func (m SortModel) selectView() {
-	m.style = m.style.BorderForeground(lipgloss.Color("#6E3F00"))
-}
-
-func (m SortModel) deselectView() {
-	m.style = m.style.BorderForeground(lipgloss.Color("#6E3F00"))
+func (m SortModel) toggleBorder() lipgloss.Style {
+	if m.selected == true {
+		return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
+	}
+	return m.style.BorderForeground(lipgloss.Color("#D17600"))
 }
 
 func InitialSort(height int) SortModel {
 	return SortModel{
-		text: "Sort",
+		text:     "Sort",
+		selected: false,
 		style: lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("#6E3F00")).
@@ -36,6 +37,14 @@ func (m SortModel) Init() tea.Cmd {
 }
 
 func (m SortModel) Update(msg tea.Msg) (SortModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "L", "H", "J", "K":
+			m.style = m.toggleBorder()
+			m.selected = !m.selected
+		}
+	}
 	return m, nil
 }
 
