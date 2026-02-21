@@ -23,11 +23,8 @@ var (
 type HomeModel struct {
 	sidebarCursor int
 	mainCursor    int
-	//sidebarViews  []partials.ViewModel
-	listModel   partials.ListModel
-	addModel    partials.AddModel
-	filterModel partials.FilterModel
-	sortModel   partials.SortModel
+	sidebarViews  []tea.Model
+	listModel     tea.Model
 }
 
 func InitialHome(width int, height int) HomeModel {
@@ -48,17 +45,14 @@ func InitialHome(width int, height int) HomeModel {
 	filter := partials.InitialFilter(height - (10))
 	sort := partials.InitialSort(3)
 
-	//sidebarList := make([]partials.ViewModel, 3)
-	//sidebarList[0] = add
-	//sidebarList[1] = filter
-	//sidebarList[2] = sort
+	sidebarList := make([]tea.Model, 3)
+	sidebarList[0] = add
+	sidebarList[1] = filter
+	sidebarList[2] = sort
 
 	return HomeModel{
-		//sidebarViews:  sidebarList,
+		sidebarViews:  sidebarList,
 		listModel:     list,
-		addModel:      add,
-		filterModel:   filter,
-		sortModel:     sort,
 		sidebarCursor: 0,
 		mainCursor:    0,
 	}
@@ -75,7 +69,7 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.listModel, cmd = m.listModel.Update(msg)
-		m.filterModel, cmd = m.filterModel.Update(msg)
+		m.sidebarViews[1], cmd = m.sidebarViews[1].Update(msg)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
@@ -83,69 +77,35 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 
 		case "K":
 			if m.mainCursor == 0 && m.sidebarCursor > 0 {
+				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
+				cmds = append(cmds, cmd)
 				m.sidebarCursor--
-				switch m.sidebarCursor {
-				case 0:
-					m.addModel, cmd = m.addModel.Update(msg)
-					cmds = append(cmds, cmd)
-					m.filterModel, cmd = m.filterModel.Update(msg)
-					cmds = append(cmds, cmd)
-				case 1:
-					m.filterModel, cmd = m.filterModel.Update(msg)
-					cmds = append(cmds, cmd)
-					m.sortModel, cmd = m.sortModel.Update(msg)
-					cmds = append(cmds, cmd)
-				}
+				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
+				cmds = append(cmds, cmd)
 			}
 		case "J":
 			if m.mainCursor == 0 && m.sidebarCursor < 2 {
+				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
+				cmds = append(cmds, cmd)
 				m.sidebarCursor++
-				switch m.sidebarCursor {
-				case 1:
-					m.addModel, cmd = m.addModel.Update(msg)
-					cmds = append(cmds, cmd)
-					m.filterModel, cmd = m.filterModel.Update(msg)
-					cmds = append(cmds, cmd)
-				case 2:
-					m.filterModel, cmd = m.filterModel.Update(msg)
-					cmds = append(cmds, cmd)
-					m.sortModel, cmd = m.sortModel.Update(msg)
-					cmds = append(cmds, cmd)
-				}
+				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
+				cmds = append(cmds, cmd)
 			}
 		case "H":
 			if m.mainCursor > 0 {
 				m.mainCursor--
 				m.listModel, cmd = m.listModel.Update(msg)
 				cmds = append(cmds, cmd)
-				switch m.sidebarCursor {
-				case 0:
-					m.addModel, cmd = m.addModel.Update(msg)
-					cmds = append(cmds, cmd)
-				case 1:
-					m.filterModel, cmd = m.filterModel.Update(msg)
-					cmds = append(cmds, cmd)
-				case 2:
-					m.sortModel, cmd = m.sortModel.Update(msg)
-					cmds = append(cmds, cmd)
-				}
+				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
+				cmds = append(cmds, cmd)
 			}
 		case "L":
 			if m.mainCursor < 1 {
 				m.mainCursor++
 				m.listModel, cmd = m.listModel.Update(msg)
 				cmds = append(cmds, cmd)
-				switch m.sidebarCursor {
-				case 0:
-					m.addModel, cmd = m.addModel.Update(msg)
-					cmds = append(cmds, cmd)
-				case 1:
-					m.filterModel, cmd = m.filterModel.Update(msg)
-					cmds = append(cmds, cmd)
-				case 2:
-					m.sortModel, cmd = m.sortModel.Update(msg)
-					cmds = append(cmds, cmd)
-				}
+				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
+				cmds = append(cmds, cmd)
 			}
 		case "j", "k", "up", "down":
 			if m.mainCursor == 1 {
@@ -162,7 +122,7 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 
 func (m HomeModel) View() string {
 	s := ""
-	sidebar := lipgloss.JoinVertical(lipgloss.Center, m.addModel.View(), m.filterModel.View(), m.sortModel.View())
+	sidebar := lipgloss.JoinVertical(lipgloss.Center, m.sidebarViews[0].View(), m.sidebarViews[1].View(), m.sidebarViews[2].View())
 	list := m.listModel.View()
 	s = lipgloss.JoinHorizontal(lipgloss.Top, sidebar, list)
 

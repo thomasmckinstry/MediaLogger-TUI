@@ -37,7 +37,7 @@ func (m AddModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m AddModel) Update(msg tea.Msg) (AddModel, tea.Cmd) {
+func (m AddModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {

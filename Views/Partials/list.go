@@ -55,7 +55,7 @@ func (m ListModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m ListModel) Update(msg tea.Msg) (ListModel, tea.Cmd) {
+func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:

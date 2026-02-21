@@ -36,7 +36,7 @@ func (m FilterModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m FilterModel) Update(msg tea.Msg) (FilterModel, tea.Cmd) {
+func (m FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.style = m.style.Height(msg.Height - (9))
