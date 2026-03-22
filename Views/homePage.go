@@ -75,6 +75,7 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 		case "ctrl+c", "q":
 			return m, tea.Quit
 
+		//TODO: See if  I can clean up the homepage nav so I can just have it in one condition
 		case "K":
 			if m.mainCursor == 0 && m.sidebarCursor > 0 {
 				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
@@ -107,10 +108,18 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = append(cmds, cmd)
 			}
+		//TODO: Can I put the partials in an array so I can just index into them instead of having an extra conditional?
 		case "j", "k", "up", "down":
 			if m.mainCursor == 1 {
 				m.listModel, cmd = m.listModel.Update(msg)
 			}
+		case "l", "h", "left", "right":
+			if m.mainCursor == 0 {
+				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
+				cmds = append(cmds, cmd)
+			}
+		default: // TODO: Eventually this should also default to sending messages to the list
+			m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 			cmds = append(cmds, cmd)
 		}
 	}
