@@ -1,8 +1,8 @@
 package partials
 
 import (
-	"github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type SortModel struct {
@@ -71,7 +71,7 @@ func (m SortModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m SortModel) View() string {
+func (m SortModel) View() tea.View {
 	header := lipgloss.PlaceHorizontal(18, lipgloss.Center, "Sort")
 	contents := lipgloss.PlaceHorizontal(18, lipgloss.Center,
 		lipgloss.PlaceVertical(3, lipgloss.Center,
@@ -83,5 +83,5 @@ func (m SortModel) View() string {
 		),
 	)
 
-	return m.mainStyle.Render(lipgloss.JoinVertical(lipgloss.Right, header, contents))
+	return tea.NewView(m.mainStyle.Render(lipgloss.JoinVertical(lipgloss.Right, header, contents)))
 }

@@ -1,8 +1,8 @@
 package partials
 
 import (
-	"github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type AddModel struct {
@@ -49,6 +49,6 @@ func (m AddModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m AddModel) View() string {
-	return m.style.Render(m.text)
+func (m AddModel) View() tea.View {
+	return tea.NewView(m.style.Render(m.text))
 }

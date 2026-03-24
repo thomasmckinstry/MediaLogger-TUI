@@ -1,9 +1,9 @@
 package views
 
 import (
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/table"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	partials "github.com/thomasmckinstry/Bubbletea-Tutorial/Views/Partials"
 )
 
@@ -112,6 +112,9 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 		case "j", "k", "up", "down":
 			if m.mainCursor == 1 {
 				m.listModel, cmd = m.listModel.Update(msg)
+			} else {
+				m.sidebarViews[m.sidebarCursor], cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
+				cmds = append(cmds, cmd)
 			}
 		case "l", "h", "left", "right":
 			if m.mainCursor == 0 {
@@ -129,12 +132,14 @@ func (m HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 	return m, nil
 }
 
-func (m HomeModel) View() string {
+func (m HomeModel) View() tea.View {
 	s := ""
-	sidebar := lipgloss.JoinVertical(lipgloss.Center, m.sidebarViews[0].View(), m.sidebarViews[1].View(), m.sidebarViews[2].View())
+	sidebar := lipgloss.JoinVertical(lipgloss.Center, m.sidebarViews[0].View().Content, m.sidebarViews[1].View().Content, m.sidebarViews[2].View().Content)
 	list := m.listModel.View()
-	s = lipgloss.JoinHorizontal(lipgloss.Top, sidebar, list)
+	s = lipgloss.JoinHorizontal(lipgloss.Top, sidebar, list.Content)
 
 	// Send the UI for rendering
-	return s
+	view := tea.NewView(s)
+	view.AltScreen = true
+	return view
 }

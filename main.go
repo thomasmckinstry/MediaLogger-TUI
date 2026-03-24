@@ -9,9 +9,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/donderom/bubblon"
+	"charm.land/bubbles/v2/table"
+	tea "charm.land/bubbletea/v2"
 	"github.com/thomasmckinstry/Bubbletea-Tutorial/Views"
 	"golang.org/x/term"
 )
@@ -54,7 +53,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch msg.String() {
 
-		case "ctrl+c", "q":
+		case "ctrl+c":
 			return m, tea.Quit
 
 		case "K", "L", "H", "J":
@@ -78,12 +77,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
-	s := ""
-	s += m.homeModel.View()
+func (m model) View() tea.View {
+	view := m.homeModel.View()
 
 	// Send the UI for rendering
-	return s
+	return view
 }
 
 func main() {
@@ -103,8 +101,7 @@ func main() {
 	defer f.Close()
 
 	mainModel := initialModel()
-	controller, _ := bubblon.New(mainModel)
-	program := tea.NewProgram(controller, tea.WithAltScreen())
+	program := tea.NewProgram(mainModel)
 	if _, err := program.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
