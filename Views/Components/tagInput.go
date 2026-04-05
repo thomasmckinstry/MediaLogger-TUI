@@ -13,10 +13,16 @@ type TagInputModel struct {
 	title      string
 	selected   bool
 
-	tagStyle lipgloss.Style
+	tagStyle   lipgloss.Style
+	titleStyle lipgloss.Style
+	inputStyle lipgloss.Style
+
+	width int
 
 	errorMsg string
 }
+
+type NavMsg bool
 
 func InitialInput(tagCnt int, placeholder string, title string, width int, selected bool) TagInputModel {
 	tags := []string{}
@@ -34,8 +40,11 @@ func InitialInput(tagCnt int, placeholder string, title string, width int, selec
 		tagsCursor: 0,
 		title:      title,
 		selected:   selected,
+		width:      width,
 		tagStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#D17600")),
+		titleStyle: lipgloss.NewStyle().
+			Align(lipgloss.Center),
 	}
 }
 
@@ -52,23 +61,34 @@ func (m TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.errorMsg = msg.String()
 		switch msg.String() {
 		case "esc": // Unfocus the component
-			m.textInput.Blur()
-		case "j", "down": // Nav between tags
-			if m.selected && !m.textInput.Focused() {
+			if m.textInput.Focused() {
+				m.textInput.Blur()
+			} else {
 				m.selected = false
-			} else if m.tagsCursor < len(m.tags)-1 && m.selected {
+			}
+		case "enter": // Add a tag from the current text input and empty the text input OR focus the component
+			if !m.selected {
+				m.selected = true
+			} else if m.selected && !m.textInput.Focused() {
+				m.textInput.Focus()
+			} else if m.textInput.Value() != "" && len(m.tags) < 3 {
+				m.tags = append(m.tags, m.textInput.Value())
+				m.textInput.Reset()
+			}
+		case "j", "down": // Nav between tags
+			if m.tagsCursor < len(m.tags)-1 && !m.textInput.Focused() && m.selected {
 				m.tagsCursor++
 			} else {
-				m.selected = true
+				m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
 			}
+			cmd = func() tea.Msg { return NavMsg(!m.selected) }
 		case "k", "up":
-			if m.selected && !m.textInput.Focused() {
-				m.selected = false
-			} else if m.tagsCursor > 0 && m.selected {
+			if m.tagsCursor > 0 && !m.textInput.Focused() && m.selected {
 				m.tagsCursor--
 			} else {
-				m.selected = true
+				m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
 			}
+			cmd = func() tea.Msg { return NavMsg(!m.selected) }
 		case "delete": // Delete current tag
 			if len(m.tags) > 0 {
 				m.tags = append(m.tags[:m.tagsCursor], m.tags[m.tagsCursor+1:]...)
@@ -76,23 +96,17 @@ func (m TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.tagsCursor--
 				}
 			}
-		case "enter": // Add a tag from the current text input and empty the text input OR focus the component
-			if !m.textInput.Focused() {
-				m.textInput.Focus()
-			} else if m.textInput.Value() != "" && len(m.tags) < 3 {
-				m.tags = append(m.tags, m.textInput.Value())
-				m.textInput.Reset()
-			}
+		default:
+			m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
 		}
 	}
 
-	m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
 	return m, cmd
 }
 
 func (m TagInputModel) View() tea.View {
 	var s string
-	s = m.title
+	s = lipgloss.PlaceHorizontal(16, lipgloss.Center, m.title)
 	if m.selected {
 		s = m.tagStyle.Render(s) // Get an independent "selected" style for showing color
 	}
@@ -105,11 +119,12 @@ func (m TagInputModel) View() tea.View {
 			continue
 		}
 		tagStr = " - " + tag
-		if index == m.tagsCursor && m.textInput.Focused() { // Color selected field
+		if index == m.tagsCursor && !m.textInput.Focused() && m.selected { // Color selected field
 			tagStr = m.tagStyle.Render(tagStr)
 		}
 		s = lipgloss.JoinVertical(lipgloss.Left, s, tagStr)
 	}
+	//s = lipgloss.JoinVertical(lipgloss.Left, s, m.errorMsg)
 
 	return tea.NewView(s)
 }

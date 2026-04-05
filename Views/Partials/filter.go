@@ -14,7 +14,7 @@ type FilterModel struct {
 	titleInput     tea.Model
 	genreInput     tea.Model
 	themeInput     tea.Model // TODO: These need additional displays for previous entries
-	selected       bool
+	selected       bool      // Indicates if the cursor is interacting with Filter
 	focused        bool
 	cursor         int
 	forms          []tea.Model // Can I get this to use pointers to the actual models? I think right now I'm copying them
@@ -37,9 +37,9 @@ func (m FilterModel) toggleBorder() lipgloss.Style {
 }
 
 func InitialFilter(height int) FilterModel {
-	titleInput := components.InitialInput(3, "title", "Title", 14, true)
-	genreInput := components.InitialInput(3, "genre", "Genre", 14, false)
-	themeInput := components.InitialInput(3, "theme", "Theme", 14, false)
+	titleInput := components.InitialInput(3, "", "Title", 14, true)
+	genreInput := components.InitialInput(3, "", "Genre", 14, false)
+	themeInput := components.InitialInput(3, "", "Theme", 14, false)
 
 	//status := []string{"Completed", "In Progress", "Started", "Pending", "Dropped"}
 	forms := []tea.Model{titleInput, genreInput, themeInput} // TODO: Figure out how to have null pointers to each form
@@ -65,7 +65,6 @@ func InitialFilter(height int) FilterModel {
 			Align(lipgloss.Center).
 			Width(16),
 		textinputStyle: lipgloss.NewStyle().
-			Align(lipgloss.Center).
 			MarginTop(1).
 			Width(16),
 	}
@@ -95,25 +94,27 @@ func (m FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.selected = !m.selected
 		case "j", "down": // TODO: Make these check for focused inputs before moving the cursor
 			m.forms[m.cursor], cmd = m.forms[m.cursor].Update(msg)
-			if m.cursor < len(m.forms)-1 && !m.focused {
+			msg, ok := cmd().(components.NavMsg)
+			if m.cursor < len(m.forms)-1 && ok && bool(msg) { //!m.focused {
 				m.cursor++
+				m.forms[m.cursor], cmd = m.forms[m.cursor].Update(msg)
 			}
-			m.forms[m.cursor], cmd = m.forms[m.cursor].Update(msg)
 		case "k", "up":
 			m.forms[m.cursor], cmd = m.forms[m.cursor].Update(msg)
-			if m.cursor > 0 && !m.focused {
+			msg, ok := cmd().(components.NavMsg)
+			if m.cursor > 0 && ok && bool(msg) {
 				m.cursor--
+				m.forms[m.cursor], cmd = m.forms[m.cursor].Update(msg)
 			}
-			m.forms[m.cursor], cmd = m.forms[m.cursor].Update(msg)
 		default:
 			/*if field, ok := m.forms[m.cursor].(textinput.Model); ok {
 				if field.Focused() {
 					m.forms[m.cursor], cmd = field.Update(msg)
 				}
 			}*/
-			if m.focused {
-				m.forms[m.cursor], cmd = m.forms[m.cursor].Update(msg)
-			}
+			//if m.focused {
+			m.forms[m.cursor], cmd = m.forms[m.cursor].Update(msg)
+			//}
 		}
 	}
 	return m, cmd
@@ -128,6 +129,13 @@ func (m FilterModel) View() tea.View {
 	for _, form := range m.forms {
 		s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(form.View().Content))
 	}
+
+	/*if m.focused {
+		s += "\nfocused"
+	}
+	if m.selected {
+		s += "\nselected"
+	}*/
 
 	//s = lipgloss.JoinVertical(lipgloss.Left, s, m.errorMsg)
 	v := tea.NewView(m.style.Render(s))
