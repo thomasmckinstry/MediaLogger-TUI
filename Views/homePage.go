@@ -143,9 +143,7 @@ func (m *HomeModel) View() tea.View {
 
 		if formView.Cursor != nil {
 			c = formView.Cursor
-			c.Y += 1 // TODO: These adjustments being hardcoded sucks but it works for now.
-			c.X += 2
-			// Should not need to adjust height of the cursor here
+			c.Y += lipgloss.Height(s)
 		}
 	}
 	sidebar := lipgloss.JoinVertical(lipgloss.Center, sidebarContent...)

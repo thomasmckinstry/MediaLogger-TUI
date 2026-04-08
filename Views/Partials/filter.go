@@ -60,7 +60,6 @@ func InitialFilter(height int) FilterModel {
 			Align(lipgloss.Center).
 			Width(16),
 		textinputStyle: lipgloss.NewStyle().
-			MarginTop(1).
 			Width(16),
 	}
 }
@@ -124,11 +123,11 @@ func (m *FilterModel) View() tea.View {
 
 	for _, form := range m.forms {
 		formView := form.View()
-		s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(formView.Content))
 		if formView.Cursor != nil {
 			c = formView.Cursor
-			c.Y += lipgloss.Height(s)
+			c.Y += lipgloss.Height(s) + 2 // TODO: Make the + 2 not hardcoded
 		}
+		s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(formView.Content))
 	}
 
 	/*if m.focused {
