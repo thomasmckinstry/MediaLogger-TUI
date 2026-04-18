@@ -19,23 +19,33 @@ func (m ListModel) deselectView() lipgloss.Style {
 	return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
 }
 
-func InitialList(width int, height int, cols []table.Column, rows []table.Row) ListModel {
+func InitialList(width int, height int, rows []table.Row) ListModel {
+
+	var columns = []table.Column{
+		{Title: "Title", Width: width / 4},
+		{Title: "Medium", Width: width / 8},
+		{Title: "Status", Width: width / 8},
+		{Title: "Tags", Width: width / 3},
+		{Title: "Released", Width: width / 6},
+	}
+
 	t := table.New(
-		table.WithColumns(cols),
+		table.WithColumns(columns),
 		table.WithRows(rows),
 		table.WithFocused(true),
 		table.WithHeight(7),
+		table.WithWidth(width),
 	)
 
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
+		BorderForeground(lipgloss.Color("#6E3F00")).
 		BorderBottom(true).
 		Bold(false)
 	s.Selected = s.Selected.
 		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
+		Background(lipgloss.Color("#D17600")).
 		Bold(false)
 	t.SetStyles(s)
 
@@ -59,7 +69,15 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.style = m.style.Height(msg.Height).Width(msg.Width - (20 + 2))
+		m.style = m.style.Height(msg.Height).Width(msg.Width - 18)
+		width := msg.Width - 29
+		m.table.SetColumns([]table.Column{
+			{Title: "Title", Width: width / 4},
+			{Title: "Medium", Width: width / 8},
+			{Title: "Status", Width: width / 8},
+			{Title: "Tags", Width: width / 3},
+			{Title: "Released", Width: width / 6},
+		})
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
@@ -70,8 +88,10 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "L":
 			m.style = m.selectView()
+			m.table.Focus()
 		case "H":
 			m.style = m.deselectView()
+			m.table.Blur()
 		case "j", "k", "up", "down":
 			m.table, cmd = m.table.Update(msg)
 		}
