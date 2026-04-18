@@ -28,20 +28,13 @@ type HomeModel struct {
 }
 
 func InitialHome(width int, height int) *HomeModel {
-	var columns = []table.Column{ // TODO: Remove this
-		{Title: "Title", Width: 30},
-		{Title: "Medium", Width: 20},
-		{Title: "Status", Width: 15},
-		{Title: "Genre", Width: 14},
-	}
-
 	var rows = []table.Row{ // TODO: Remove this
-		{"I am Your Beast", "Game", "Completed", "Action"},
-		{"One Battle After Another", "Movie, Live Action", "Pending", "Action"},
+		{"I am Your Beast", "Game", "Completed", "Action", "2024"},
+		{"One Battle After Another", "Movie, Live Action", "Pending", "Action", "2025"},
 	}
 
-	list := partials.InitialList(width, height, columns, rows)
-	add := partials.InitialAdd() // height = 1 Note: I think each side of the border adds ~1.5
+	list := partials.InitialList(width-18, height, rows)
+	add := partials.InitialAdd() // height = 1 Note: I think each side of the border adds 1
 	filter := partials.InitialFilter(height - (7))
 	sort := partials.InitialSort(3)
 
