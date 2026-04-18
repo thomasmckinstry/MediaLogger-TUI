@@ -12,6 +12,7 @@ type TagInputModel struct {
 	tagsCursor int
 	title      string
 	selected   bool
+	tagCnt     int
 
 	tagStyle   lipgloss.Style
 	titleStyle lipgloss.Style
@@ -39,6 +40,7 @@ func InitialInput(tagCnt int, placeholder string, title string, width int, selec
 		textInput:  input,
 		tagsCursor: 0,
 		title:      title,
+		tagCnt:     tagCnt,
 		selected:   selected,
 		width:      width,
 		tagStyle: lipgloss.NewStyle().
@@ -70,7 +72,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected = true
 			} else if m.selected && !m.textInput.Focused() {
 				m.textInput.Focus()
-			} else if m.textInput.Value() != "" && len(m.tags) < 3 {
+			} else if m.textInput.Value() != "" && len(m.tags) < m.tagCnt {
 				m.tags = append(m.tags, m.textInput.Value())
 				m.textInput.Reset()
 			}

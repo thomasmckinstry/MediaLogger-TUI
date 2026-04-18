@@ -16,8 +16,7 @@ type FilterModel struct {
 	cursor         int
 	forms          []tea.Model // Can I get this to use pointers to the actual models? I think right now I'm copying them
 	status         []string
-	genres         []string
-	themes         []string
+	tags           []string
 	style          lipgloss.Style
 	headerStyle    lipgloss.Style
 	textinputStyle lipgloss.Style
@@ -34,14 +33,11 @@ func (m FilterModel) toggleBorder() lipgloss.Style {
 }
 
 func InitialFilter(height int) FilterModel {
-	titleInput := components.InitialInput(3, "", "Title", 14, true)
-	genreInput := components.InitialInput(3, "", "Genre", 14, false)
-	themeInput := components.InitialInput(3, "", "Theme", 14, false)
+	titleInput := components.InitialInput(0, "", "Title", 14, true) // TODO: Sub this out for a regular text input without tags
+	tagsInput := components.InitialInput(5, "", "Tag", 14, false)
 
 	//status := []string{"Completed", "In Progress", "Started", "Pending", "Dropped"}
-	forms := []tea.Model{&titleInput, &genreInput, &themeInput} // TODO: Figure out how to have null pointers to each form
-	// forms is an array of all the forms that make up the filter box.
-	// This is so I can index into each one as I navigate with the keyboard
+	forms := []tea.Model{&titleInput, &tagsInput}
 
 	return FilterModel{
 		headerText: "Filter",
@@ -126,6 +122,7 @@ func (m *FilterModel) View() tea.View {
 		if formView.Cursor != nil {
 			c = formView.Cursor
 			c.Y += lipgloss.Height(s) + 2 // TODO: Make the + 2 not hardcoded
+			c.X += 1
 		}
 		s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(formView.Content))
 	}
