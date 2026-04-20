@@ -11,12 +11,11 @@ type TagInputModel struct {
 	tags       []string
 	tagsCursor int
 	title      string
-	selected   bool
+	selected   bool // Top level focus, can navigate tags, no text entry
 	tagCnt     int
 
-	tagStyle   lipgloss.Style
 	titleStyle lipgloss.Style
-	inputStyle lipgloss.Style
+	tagStyle   lipgloss.Style
 
 	width int
 
@@ -43,15 +42,15 @@ func InitialInput(tagCnt int, placeholder string, title string, width int, selec
 		tagCnt:     tagCnt,
 		selected:   selected,
 		width:      width,
-		tagStyle: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#D17600")),
 		titleStyle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#D17600")),
+		tagStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#D17600")),
 	}
 }
 
 func (m *TagInputModel) Init() tea.Cmd {
-	return nil //textinput.Blink
+	return nil
 }
 
 func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -108,9 +107,6 @@ func (m *TagInputModel) View() tea.View {
 	var s string
 	var c = m.textInput.Cursor()
 	s = lipgloss.PlaceHorizontal(16, lipgloss.Center, m.title)
-	if m.selected {
-		s = m.titleStyle.Render(s) // Get an independent "selected" style for showing color
-	}
 	if m.textInput.Focused() {
 		c.Y += lipgloss.Height(s)
 		c.X += 1 // Aligns it correctly with the text

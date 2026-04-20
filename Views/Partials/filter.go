@@ -33,11 +33,15 @@ func (m FilterModel) toggleBorder() lipgloss.Style {
 }
 
 func InitialFilter(height int) FilterModel {
-	titleInput := components.InitialInput(0, "", "Title", 14, true) // TODO: Sub this out for a regular text input without tags
+	titleInput := components.InitialInput(0, "", "Title", 14, false) // TODO: Sub this out for a regular text input without tags
 	tagsInput := components.InitialInput(5, "", "Tag", 14, false)
+	mediums := []string{"Movie", "Book", "Show", "Anime", "Manga", "Comic", "Show", "Animated", "Live Action"} // TODO: Query the db for this.
+	mediumInput := components.InitialCheckbox(mediums, "Medium", 14)
+	statuses := []string{"Pending", "Started", "Hiatus", "Completed", "Dropped"} // TODO: Query the db for this.
+	statusInput := components.InitialCheckbox(statuses, "Status", 14)
 
 	//status := []string{"Completed", "In Progress", "Started", "Pending", "Dropped"}
-	forms := []tea.Model{&titleInput, &tagsInput}
+	forms := []tea.Model{&titleInput, &tagsInput, &mediumInput, &statusInput}
 
 	return FilterModel{
 		headerText: "Filter",
@@ -56,7 +60,10 @@ func InitialFilter(height int) FilterModel {
 			Align(lipgloss.Center).
 			Width(16),
 		textinputStyle: lipgloss.NewStyle().
-			Width(16),
+			Width(17).
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("#6E3F00")).
+			BorderLeft(true),
 	}
 }
 
@@ -97,14 +104,7 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				_, cmd = m.forms[m.cursor].Update(msg)
 			}
 		default:
-			/*if field, ok := m.forms[m.cursor].(textinput.Model); ok {
-				if field.Focused() {
-					m.forms[m.cursor], cmd = field.Update(msg)
-				}
-			}*/
-			//if m.focused {
 			_, cmd = m.forms[m.cursor].Update(msg)
-			//}
 		}
 	}
 	return m, cmd
@@ -117,14 +117,19 @@ func (m *FilterModel) View() tea.View {
 	//header:
 	s := m.headerStyle.Render(m.headerText)
 
-	for _, form := range m.forms {
+	for i, form := range m.forms {
+		s += "\n"
 		formView := form.View()
 		if formView.Cursor != nil {
 			c = formView.Cursor
 			c.Y += lipgloss.Height(s) + 2 // TODO: Make the + 2 not hardcoded
 			c.X += 1
 		}
-		s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(formView.Content))
+		if i == m.cursor && m.selected {
+			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))
+		} else {
+			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(formView.Content))
+		}
 	}
 
 	/*if m.focused {

@@ -27,7 +27,7 @@ type HomeModel struct {
 }
 
 func InitialHome(width int, height int) *HomeModel {
-	list := partials.InitialList(width-18, height)
+	list := partials.InitialList(width-19, height)
 	add := partials.InitialAdd() // height = 1 Note: I think each side of the border adds 1
 	filter := partials.InitialFilter(height - (7))
 	sort := partials.InitialSort(3)
