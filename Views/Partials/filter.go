@@ -1,9 +1,11 @@
 package partials
 
 import (
+	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/thomasmckinstry/Bubbletea-Tutorial/Views/Components"
+	"log"
 )
 
 // TODO: I can probably sub out most of this file for a huh? component
@@ -14,12 +16,14 @@ type FilterModel struct {
 	selected       bool // Indicates if the cursor is interacting with Filter
 	focused        bool
 	cursor         int
+	height         int
 	forms          []tea.Model // Can I get this to use pointers to the actual models? I think right now I'm copying them
 	status         []string
 	tags           []string
 	style          lipgloss.Style
 	headerStyle    lipgloss.Style
 	textinputStyle lipgloss.Style
+	enterStyle     lipgloss.Style
 
 	errorMsg string
 }
@@ -48,6 +52,7 @@ func InitialFilter(height int) FilterModel {
 		selected:   false,
 		focused:    false,
 		cursor:     0,
+		height:     height,
 		forms:      forms,
 		style: lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
@@ -64,6 +69,9 @@ func InitialFilter(height int) FilterModel {
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("#6E3F00")).
 			BorderLeft(true),
+		enterStyle: lipgloss.NewStyle().
+			BorderStyle(lipgloss.DoubleBorder()).
+			BorderForeground(lipgloss.Color("#6E3F00")),
 	}
 }
 
@@ -78,9 +86,14 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.style = m.style.Height(msg.Height - (7))
+		m.height = msg.Height - 7
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
+			if m.cursor == len(m.forms) {
+				log.Println("We do the damn search")
+				break
+			}
 			_, cmd = m.forms[m.cursor].Update(msg)
 			m.focused = true
 		case "esc":
@@ -89,14 +102,26 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "L", "H", "J", "K":
 			m.style = m.toggleBorder()
 			m.selected = !m.selected
-		case "j", "down": // TODO: Make these check for focused inputs before moving the cursor
+		case "j", "down":
+			if m.cursor > len(m.forms)-1 {
+				break
+			}
 			_, cmd = m.forms[m.cursor].Update(msg)
 			msg, ok := cmd().(components.NavMsg)
-			if m.cursor < len(m.forms)-1 && ok && bool(msg) { //!m.focused {
+			if m.cursor < len(m.forms)-1 && ok && bool(msg) {
 				m.cursor++
 				_, cmd = m.forms[m.cursor].Update(msg)
+			} else if m.cursor >= len(m.forms)-1 && ok && bool(msg) {
+				m.cursor++
+				m.enterStyle = m.enterStyle.BorderForeground(lipgloss.Color("#D17600"))
 			}
 		case "k", "up":
+			if m.cursor == len(m.forms) {
+				m.enterStyle = m.enterStyle.BorderForeground(lipgloss.Color("#6E3F00"))
+				m.cursor--
+				_, cmd = m.forms[m.cursor].Update(msg)
+				break
+			}
 			_, cmd = m.forms[m.cursor].Update(msg)
 			msg, ok := cmd().(components.NavMsg)
 			if m.cursor > 0 && ok && bool(msg) {
@@ -131,15 +156,10 @@ func (m *FilterModel) View() tea.View {
 			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(formView.Content))
 		}
 	}
+	enter := m.enterStyle.Render(lipgloss.PlaceHorizontal(15, lipgloss.Center, "ENTER"))
+	enter = lipgloss.PlaceVertical(m.height-lipgloss.Height(s)-1, lipgloss.Bottom, enter)
+	s = lipgloss.JoinVertical(lipgloss.Left, s, enter)
 
-	/*if m.focused {
-		s += "\nfocused"
-	}
-	if m.selected {
-		s += "\nselected"
-	}*/
-
-	//s = lipgloss.JoinVertical(lipgloss.Left, s, m.errorMsg)
 	v := tea.NewView(m.style.Render(s))
 	v.Cursor = c
 	return v
