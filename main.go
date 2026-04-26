@@ -36,7 +36,7 @@ func initialModel() model {
 		currViews: make([]string, 2),
 		homeModel: homeAddr,
 		addModel:  addAddr,
-		cursor:    1,
+		cursor:    0,
 	}
 }
 
@@ -47,12 +47,17 @@ func (m *model) Init() tea.Cmd {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
+	var cmds tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
-
+	case views.ViewMsg:
+		if len(os.Getenv("DEBUG")) > 0 {
+			log.Println("main received AddMsg")
+		}
+		m.cursor = int(msg)
 	case tea.WindowSizeMsg:
 		_, cmd = m.homeModel.Update(msg)
+		cmds = tea.Batch(cmds, cmd)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -61,22 +66,27 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "K", "L", "H", "J":
 			if m.currViews[m.cursor] == "home" {
 				_, cmd = m.homeModel.Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 			} else if m.currViews[m.cursor] == "add" {
 				_, cmd = m.addModel.Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			}
 		case "j", "k", "up", "down", "left", "right", "h", "l":
 			if m.currViews[m.cursor] == "home" {
 				_, cmd = m.homeModel.Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			} else if m.currViews[m.cursor] == "add" {
 				_, cmd = m.addModel.Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			}
-			cmds = append(cmds, cmd)
+			cmds = tea.Batch(cmds, cmd)
 		default:
 			if m.currViews[m.cursor] == "home" {
 				_, cmd = m.homeModel.Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			} else if m.currViews[m.cursor] == "add" {
 				_, cmd = m.addModel.Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			}
 
 		}
@@ -84,11 +94,14 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Return the updated model to the Bubble Tea runtime for processing.
 	// Note that we're not returning a command.
-	return m, nil
+	return m, cmds
 }
 
 func (m *model) View() tea.View {
 	var view tea.View
+	if len(os.Getenv("DEBUG")) > 0 {
+		log.Println("main cursor at:", m.cursor)
+	}
 	if m.currViews[m.cursor] == "home" {
 		view = m.homeModel.View()
 	} else if m.currViews[m.cursor] == "add" {

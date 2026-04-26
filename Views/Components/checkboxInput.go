@@ -83,7 +83,7 @@ func (m *CheckboxModel) View() tea.View {
 	var s string
 	s = lipgloss.PlaceHorizontal(m.width, lipgloss.Center, m.title)
 	if len(os.Getenv("DEBUG")) > 0 {
-		log.Println("Checkbox form Width and Height: ", lipgloss.Width(s), lipgloss.Height(s))
+		//log.Println("Checkbox form Width and Height: ", lipgloss.Width(s), lipgloss.Height(s))
 	}
 	for i, medium := range m.entries {
 		var entry string

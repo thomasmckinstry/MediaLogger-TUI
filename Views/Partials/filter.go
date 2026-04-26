@@ -1,6 +1,7 @@
 package partials
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 
@@ -126,16 +127,22 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			if m.cursor == len(m.forms) {
-				var contents [][]string
+				var contents [][]byte
+				var content []byte
+				var err error
 				for _, form := range m.forms {
 					switch form := form.(type) {
 					case *components.TextInputModel:
-						contents = append(contents, form.GetContents())
+						content = []byte(form.GetContents())
 					case *components.TagInputModel:
-						contents = append(contents, form.GetContents())
+						content, err = json.Marshal(form.GetContents()) // TODO: Marshal this to JSON
 					case *components.CheckboxModel:
-						contents = append(contents, form.GetContents())
+						content, err = json.Marshal(form.GetContents()) // TODO: Marshal this to JSONA
 					}
+					if err != nil {
+						log.Fatal("Failed to marshal input data to JSON: ", err)
+					}
+					contents = append(contents, content)
 				}
 				if len(os.Getenv("DEBUG")) > 0 {
 					log.Println(contents)

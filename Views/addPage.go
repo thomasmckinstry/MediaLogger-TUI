@@ -3,6 +3,7 @@ package views
 import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"encoding/json"
 	"github.com/thomasmckinstry/Bubbletea-Tutorial/Views/Components"
 	database "github.com/thomasmckinstry/Bubbletea-Tutorial/db"
 	"log"
@@ -42,11 +43,15 @@ func InitialAddModel(width int) *AddModel {
 	for rows.Next() {
 		var tag string
 		err = rows.Scan(&tag)
+		if len(os.Getenv("DEBUG")) > 0 {
+			log.Println("Got tag of length: ", len(tag))
+		}
 		if err != nil {
 			log.Fatal("Failed to scan tags: ", err)
 		}
 		tagSuggestions = append(tagSuggestions, tag)
 	}
+	tagSuggestions = []string{"test"}
 
 	tags := components.InitialInput(20, "{ tags }", "Tags", width, false, tagSuggestions)
 	forms := []tea.Model{&title, &tags, &medium, &status}
@@ -84,6 +89,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 	if len(os.Getenv("DEBUG")) > 0 {
 		log.Println("AddPage got: ", msg)
 	}
+	var cmds tea.Cmd
 	var cmd tea.Cmd
 	m.errorMsg = ""
 
@@ -95,36 +101,61 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			if m.cursor == len(m.forms) {
-				var contents [][]string
+				var contents [][]byte
+				var content []byte
+				var err error
 				for _, form := range m.forms {
 					switch form := form.(type) {
 					case *components.TextInputModel:
-						contents = append(contents, form.GetContents())
+						content = []byte(form.GetContents())
 					case *components.TagInputModel:
-						contents = append(contents, form.GetContents())
+						content, err = json.Marshal(form.GetContents()) // TODO: Marshal this to JSON
 					case *components.CheckboxModel:
-						contents = append(contents, form.GetContents())
+						content, err = json.Marshal(form.GetContents()) // TODO: Marshal this to JSONA
 					}
+					if err != nil {
+						log.Fatal("Failed to marshal input data to JSON: ", err)
+					}
+					contents = append(contents, content)
 				}
 				if len(os.Getenv("DEBUG")) > 0 {
 					log.Println(contents)
 				}
+				db := database.GetDB()
+				query, err := db.Prepare(`
+					INSERT INTO works (date_added, title, media_type, work_status, tags, year_released, work_id)
+					VALUES (?, ?, ?, ?, ?, ?, ?)
+				`)
+				if err != nil {
+					log.Fatal("Failed to prepare insert statement: ", err)
+				}
+				defer query.Close()
+				_, err = query.Exec(contents)
+				if err != nil {
+					log.Fatal("Failed to insert to works table: ", err)
+				}
+				cmd = func() tea.Msg { return ViewMsg(0) }
+				cmds = tea.Batch(cmds, cmd)
 				break
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
+			cmds = tea.Batch(cmds, cmd)
 			m.focused = true
 		case "esc":
 			_, cmd = m.forms[m.cursor].Update(msg)
+			cmds = tea.Batch(cmds, cmd)
 			m.focused = false
 		case "j", "down":
 			if m.cursor > len(m.forms)-1 {
 				break
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
+			cmds = tea.Batch(cmds, cmd)
 			msg, ok := cmd().(components.NavMsg)
 			if m.cursor < len(m.forms)-1 && ok && bool(msg) {
 				m.cursor++
 				_, cmd = m.forms[m.cursor].Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			} else if m.cursor >= len(m.forms)-1 && ok && bool(msg) {
 				m.cursor++
 				m.enterStyle = m.enterStyle.BorderForeground(lipgloss.Color("#D17600"))
@@ -134,19 +165,23 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 				m.enterStyle = m.enterStyle.BorderForeground(lipgloss.Color("#6E3F00"))
 				m.cursor--
 				_, cmd = m.forms[m.cursor].Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 				break
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
+			cmds = tea.Batch(cmds, cmd)
 			msg, ok := cmd().(components.NavMsg)
 			if m.cursor > 0 && ok && bool(msg) {
 				m.cursor--
 				_, cmd = m.forms[m.cursor].Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			}
 		default:
 			_, cmd = m.forms[m.cursor].Update(msg)
+			cmds = tea.Batch(cmds, cmd)
 		}
 	}
-	return m, cmd
+	return m, cmds
 }
 
 func (m *AddModel) View() tea.View {
@@ -159,9 +194,6 @@ func (m *AddModel) View() tea.View {
 			c = formView.Cursor
 			c.Y += lipgloss.Height(s) + 2 // TODO: Make the + 2 not hardcoded
 			c.X += 1
-		}
-		if len(os.Getenv("DEBUG")) > 0 {
-			log.Println("Add form Width and Height: ", lipgloss.Width(formView.Content), lipgloss.Height(formView.Content))
 		}
 		if i == m.cursor {
 			s = lipgloss.JoinVertical(lipgloss.Center, s, m.textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))

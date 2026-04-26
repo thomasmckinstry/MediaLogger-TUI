@@ -4,6 +4,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	partials "github.com/thomasmckinstry/Bubbletea-Tutorial/Views/Partials"
+
+	"log"
+	"os"
 )
 
 var (
@@ -25,6 +28,8 @@ type HomeModel struct {
 	sidebarViews  []tea.Model
 	listModel     tea.Model
 }
+
+type ViewMsg int
 
 func InitialHome(width int, height int) *HomeModel {
 	list := partials.InitialList(width-19, height)
@@ -50,7 +55,7 @@ func (m *HomeModel) Init() tea.Cmd {
 }
 
 func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
-	var cmds []tea.Cmd
+	var cmds tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 
@@ -66,57 +71,69 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 		case "K":
 			if m.mainCursor == 0 && m.sidebarCursor > 0 {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 				m.sidebarCursor--
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 			}
 		case "J":
 			if m.mainCursor == 0 && m.sidebarCursor < 2 {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 				m.sidebarCursor++
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 			}
 		case "H":
 			if m.mainCursor > 0 {
 				m.mainCursor--
 				m.listModel, cmd = m.listModel.Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 			}
 		case "L":
 			if m.mainCursor < 1 {
 				m.mainCursor++
 				m.listModel, cmd = m.listModel.Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 			}
-		//TODO: Can I put the partials in an array so I can just index into them instead of having an extra conditional?
 		case "j", "k", "up", "down":
 			if m.mainCursor == 1 {
 				m.listModel, cmd = m.listModel.Update(msg)
 			} else {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
 			}
 		case "l", "h", "left", "right":
 			if m.mainCursor == 0 {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				cmds = append(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd)
+			}
+		case "enter":
+			if m.sidebarCursor == 0 {
+				if len(os.Getenv("DEBUG")) > 0 {
+					log.Println("homePage sending AddMsg")
+				}
+				cmds = tea.Batch(cmds, func() tea.Msg { return (ViewMsg(1)) })
+			} else {
+				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			}
 		default: // TODO: Eventually this should also default to sending messages to the list
 			_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-			cmds = append(cmds, cmd)
+			cmds = tea.Batch(cmds, cmd)
 		}
 	}
 
 	// Return the updated model to the Bubble Tea runtime for processing.
 	// Note that we're not returning a command.
-	return m, nil
+	if len(os.Getenv("DEBUG")) > 0 {
+		log.Println("homePage sending cmds", cmds)
+	}
+	return m, cmds
 }
 
 func (m *HomeModel) View() tea.View {

@@ -12,8 +12,8 @@ type TextInputModel struct {
 	width     int
 }
 
-func (m *TextInputModel) GetContents() []string {
-	return []string{m.textinput.Value()}
+func (m *TextInputModel) GetContents() string {
+	return m.textinput.Value()
 }
 
 func InitialTextInput(width int, title string, placeholder string, suggestions []string) TextInputModel {
