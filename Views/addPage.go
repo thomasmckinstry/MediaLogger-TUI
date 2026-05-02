@@ -188,10 +188,11 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 				if len(os.Getenv("DEBUG")) > 0 {
 					log.Println("addPage trying to return to main")
 				}
+				clearComponents(m)
 				cmds = tea.Batch(cmds, func() tea.Msg { return (ViewMsg(0)) })
 			} else if m.cursor < len(m.forms) {
 				_, cmd = m.forms[m.cursor].Update(msg)
-				cmds = tea.Batch(cmds, cmd)
+				cmds = tea.Batch(cmds, cmd) // TODO: This needs to return a navMsg to determine if I can unfocus
 				m.focused = false
 			}
 		case "j", "down":
