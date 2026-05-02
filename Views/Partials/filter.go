@@ -1,14 +1,13 @@
 package partials
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/thomasmckinstry/Bubbletea-Tutorial/Views/Components"
-	database "github.com/thomasmckinstry/Bubbletea-Tutorial/db"
+	"github.com/thomasmckinstry/MediaLogger-TUI/Views/Components"
+	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
 )
 
 type Form interface {
@@ -128,18 +127,18 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			if m.cursor == len(m.forms) {
-				var contents [][]byte
-				var content []byte
+			if m.cursor == len(m.forms) { // Cursor on enter button
+				var contents [][]string
+				var content []string
 				var err error
 				for _, form := range m.forms {
 					switch form := form.(type) {
 					case *components.TextInputModel:
-						content = []byte(form.GetContents())
+						content = []string{form.GetContents()}
 					case *components.TagInputModel:
-						content, err = json.Marshal(form.GetContents()) // TODO: Marshal this to JSON
+						content = form.GetContents()
 					case *components.CheckboxModel:
-						content, err = json.Marshal(form.GetContents()) // TODO: Marshal this to JSONA
+						content = form.GetContents()
 					}
 					if err != nil {
 						log.Fatal("Failed to marshal input data to JSON: ", err)
@@ -147,7 +146,7 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					contents = append(contents, content)
 				}
 				if len(os.Getenv("DEBUG")) > 0 {
-					log.Println(contents)
+					log.Println("Filtering for: ", contents)
 				}
 				break
 			}

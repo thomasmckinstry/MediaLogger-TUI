@@ -3,7 +3,7 @@ package views
 import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	partials "github.com/thomasmckinstry/Bubbletea-Tutorial/Views/Partials"
+	partials "github.com/thomasmckinstry/MediaLogger-TUI/Views/Partials"
 
 	"log"
 	"os"

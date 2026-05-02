@@ -26,8 +26,8 @@ type TagInputModel struct {
 type NavMsg bool
 
 func (m *TagInputModel) Clear() {
-	m.textInput.Reset()
 	m.tags = []string{}
+	m.textInput.Reset()
 }
 
 // TODO: This should be a utils

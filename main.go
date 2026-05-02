@@ -11,7 +11,7 @@ import (
 
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
-	"github.com/thomasmckinstry/Bubbletea-Tutorial/Views"
+	"github.com/thomasmckinstry/MediaLogger-TUI/Views"
 	"golang.org/x/term"
 )
 

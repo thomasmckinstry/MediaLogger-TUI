@@ -8,8 +8,8 @@ import (
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	database "github.com/thomasmckinstry/Bubbletea-Tutorial/db"
-	"github.com/thomasmckinstry/Bubbletea-Tutorial/utils"
+	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 )
 
 var db *sql.DB
