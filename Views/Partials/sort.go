@@ -74,12 +74,10 @@ func (m *SortModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *SortModel) View() tea.View {
 	header := lipgloss.PlaceHorizontal(18, lipgloss.Center, "Sort")
 	contents := lipgloss.PlaceHorizontal(18, lipgloss.Center,
-		lipgloss.PlaceVertical(3, lipgloss.Center,
-			m.contentStyle.Render(
-				lipgloss.JoinHorizontal(lipgloss.Center, "< ",
-					lipgloss.PlaceHorizontal(14, lipgloss.Center,
-						m.textStyle.Render(m.options[m.optionsCursor])), " >"),
-			),
+		m.contentStyle.Render(
+			lipgloss.JoinHorizontal(lipgloss.Center, "< ",
+				lipgloss.PlaceHorizontal(14, lipgloss.Center,
+					m.textStyle.Render(m.options[m.optionsCursor])), " >"),
 		),
 	)
 

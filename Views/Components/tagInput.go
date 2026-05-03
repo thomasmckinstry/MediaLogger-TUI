@@ -16,7 +16,7 @@ type TagInputModel struct {
 
 	titleStyle lipgloss.Style
 	tagStyle   lipgloss.Style
-	inputStyle lipgloss.Style
+	tagsStyle  lipgloss.Style
 
 	width int
 
@@ -33,9 +33,9 @@ func (m *TagInputModel) Clear() {
 // TODO: This should be a utils
 func (m TagInputModel) toggleBorder() lipgloss.Style {
 	if m.selected == true {
-		return m.inputStyle.BorderForeground(lipgloss.Color("#6E3F00"))
+		return m.tagsStyle.BorderForeground(lipgloss.Color("#6E3F00"))
 	}
-	return m.inputStyle.BorderForeground(lipgloss.Color("#D17600"))
+	return m.tagsStyle.BorderForeground(lipgloss.Color("#D17600"))
 }
 
 func (m *TagInputModel) GetContents() []string {
@@ -66,10 +66,11 @@ func InitialInput(tagCnt int, placeholder string, title string, width int, selec
 			Foreground(lipgloss.Color("#D17600")),
 		tagStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#D17600")),
-		inputStyle: lipgloss.NewStyle().
+		tagsStyle: lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("#6E3F00")).
-			BorderBottom(true),
+			Width(width + 3).
+			BorderTop(true),
 	}
 }
 
@@ -88,12 +89,12 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.textInput.Focused() {
 				m.textInput.Blur()
 			} else if m.selected {
-				m.inputStyle = m.toggleBorder()
+				m.tagsStyle = m.toggleBorder()
 				m.selected = false
 			}
 		case "enter": // Add a tag from the current text input and empty the text input OR focus the component
 			if !m.selected {
-				m.inputStyle = m.toggleBorder()
+				m.tagsStyle = m.toggleBorder()
 				m.selected = true
 			} else if m.selected && !m.textInput.Focused() {
 				m.textInput.Focus()
@@ -138,7 +139,7 @@ func (m *TagInputModel) View() tea.View {
 		c.X += 1 // Aligns it correctly with the text
 	}
 
-	s = lipgloss.JoinVertical(lipgloss.Center, s, m.inputStyle.Render(m.textInput.View()))
+	s = lipgloss.JoinVertical(lipgloss.Left, s, m.textInput.View())
 
 	for index, tag := range m.tags {
 		tagStr := ""
@@ -149,7 +150,13 @@ func (m *TagInputModel) View() tea.View {
 		if index == m.tagsCursor && !m.textInput.Focused() && m.selected { // Color selected field
 			tagStr = m.tagStyle.Render(tagStr)
 		}
+		if index == 0 {
+			tagStr = m.tagsStyle.Render(tagStr)
+		}
 		s = lipgloss.JoinVertical(lipgloss.Left, s, tagStr)
+	}
+	if len(m.tags) == 0 {
+		s = lipgloss.JoinVertical(lipgloss.Left, s, m.tagsStyle.Render())
 	}
 	v := tea.NewView(s)
 	v.Cursor = c
