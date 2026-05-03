@@ -11,7 +11,9 @@ import (
 	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
 	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"os"
+	"slices"
 	"sort"
+	"strings"
 )
 
 var db *sql.DB
@@ -19,6 +21,7 @@ var db *sql.DB
 type ListModel struct {
 	style lipgloss.Style
 	table table.Model
+	rows  []table.Row
 }
 
 func (m ListModel) selectView() lipgloss.Style {
@@ -61,14 +64,14 @@ func InitialList(width int, height int) ListModel {
 			log.Fatal("Failed to Unmarshal medium: ", err)
 		}
 		mediumsStr := utils.ConvertMedium(mediumsArr)
-		rows = append(rows, table.Row{title, mediumsStr, utils.Status_itos(intStatus), utils.GetTagsString(tagsArr), year})
+		rows = append(rows, table.Row{title, utils.GetTagsString(tagsArr), mediumsStr, utils.Status_itos(intStatus), year})
 	}
 
 	var columns = []table.Column{
 		{Title: "Title", Width: width / 4},
+		{Title: "Tags", Width: width / 3},
 		{Title: "Medium", Width: width / 8},
 		{Title: "Status", Width: width / 8},
-		{Title: "Tags", Width: width / 3},
 		{Title: "Released", Width: width / 6},
 	}
 
@@ -101,6 +104,7 @@ func InitialList(width int, height int) ListModel {
 			Width(width).
 			Height(height),
 		table: t,
+		rows:  rows,
 	}
 }
 
@@ -116,9 +120,9 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		width := msg.Width - 29
 		m.table.SetColumns([]table.Column{
 			{Title: "Title", Width: width / 4},
+			{Title: "Tags", Width: width / 3},
 			{Title: "Medium", Width: width / 8},
 			{Title: "Status", Width: width / 8},
-			{Title: "Tags", Width: width / 3},
 			{Title: "Released", Width: width / 6},
 		})
 		m.table.Update(msg)
@@ -150,6 +154,41 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 		if len(os.Getenv("DEBUG")) > 0 {
 			log.Println("Post-sort: ", rows)
+		}
+		m.table.SetRows(rows)
+	case FilterMsg:
+		var rows []table.Row
+		filter := [][]string(msg)
+		for _, row := range m.rows {
+			include := true
+			if row[utils.Title] != filter[utils.Title][0] && filter[utils.Title][0] != "" {
+				continue
+			} else if len(filter[utils.Status]) > 0 && row[utils.Status] != filter[utils.Status][0] {
+				continue
+			}
+			tags := strings.Split(row[utils.Tags], ", ")
+			for _, tag := range filter[utils.Tags] {
+				if !slices.Contains(tags, tag) {
+					include = false
+					break
+				}
+			}
+			if !include {
+				continue
+			}
+			mediums := strings.Split(row[utils.Medium], ", ")
+			for _, medium := range filter[utils.Medium] {
+				if !slices.Contains(mediums, medium) {
+					include = false
+					break
+				}
+			}
+			if !include {
+				continue
+			}
+			if include {
+				rows = append(rows, row)
+			}
 		}
 		m.table.SetRows(rows)
 	}

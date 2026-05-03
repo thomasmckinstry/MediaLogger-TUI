@@ -14,6 +14,8 @@ type Form interface {
 	GetContents() []string
 }
 
+type FilterMsg [][]string
+
 // TODO: I can probably sub out most of this file for a huh? component
 // Don't want to do that because it's more hands off
 // TODO: Need a different way to index into the components because of different Model types.
@@ -148,7 +150,8 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if len(os.Getenv("DEBUG")) > 0 {
 					log.Println("Filtering for: ", contents)
 				}
-				break
+				cmd = func() tea.Msg { return FilterMsg(contents) }
+				return m, cmd
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
 			m.focused = true

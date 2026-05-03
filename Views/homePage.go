@@ -116,16 +116,21 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 			} else {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
+				if cmd != nil {
+					msg, ok := cmd().(partials.FilterMsg)
+					if ok {
+						m.listModel, cmd = m.listModel.Update(msg)
+					}
+				}
 			}
 		default: // TODO: Eventually this should also default to sending messages to the list
 			_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 			cmds = tea.Batch(cmds, cmd)
-			if len(os.Getenv("DEBUG")) > 0 {
-				log.Println("homePage got cmd from sidebar", cmd())
-			}
-			msg, ok := cmd().(partials.SortMsg)
-			if ok {
-				m.listModel, cmd = m.listModel.Update(msg)
+			if cmd != nil {
+				msg, ok := cmd().(partials.SortMsg)
+				if ok {
+					m.listModel, cmd = m.listModel.Update(msg)
+				}
 			}
 		}
 	}

@@ -13,10 +13,10 @@ const (
 
 const ( // Sort Option
 	Title int = iota
-	Release
-	Genre
-	Theme
+	Tags
 	Medium
+	Status
+	Released
 )
 
 var statusName = map[int]string{
