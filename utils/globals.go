@@ -11,6 +11,14 @@ const (
 	Dropped
 )
 
+const ( // Sort Option
+	Title int = iota
+	Release
+	Genre
+	Theme
+	Medium
+)
+
 var statusName = map[int]string{
 	Pending:   "Pending",
 	Started:   "Started",

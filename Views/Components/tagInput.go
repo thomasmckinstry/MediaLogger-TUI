@@ -92,6 +92,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.tagsStyle = m.toggleBorder()
 				m.selected = false
 			}
+			cmd = func() tea.Msg { return NavMsg(!m.selected) }
 		case "enter": // Add a tag from the current text input and empty the text input OR focus the component
 			if !m.selected {
 				m.tagsStyle = m.toggleBorder()

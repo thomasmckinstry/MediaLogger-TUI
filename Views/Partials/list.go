@@ -10,6 +10,8 @@ import (
 	"charm.land/lipgloss/v2"
 	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
 	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
+	"os"
+	"sort"
 )
 
 var db *sql.DB
@@ -137,6 +139,19 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "j", "k", "up", "down":
 			m.table, cmd = m.table.Update(msg)
 		}
+	case SortMsg:
+		rows := m.table.Rows()
+		if len(os.Getenv("DEBUG")) > 0 {
+			log.Println("List got sortmsg: ", int(msg))
+			log.Println("Pre-sort: ", rows)
+		}
+		sort.Slice(rows, func(i, j int) bool {
+			return rows[i][int(msg)] < rows[j][int(msg)]
+		})
+		if len(os.Getenv("DEBUG")) > 0 {
+			log.Println("Post-sort: ", rows)
+		}
+		m.table.SetRows(rows)
 	}
 	return m, cmd
 }

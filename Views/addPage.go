@@ -39,6 +39,10 @@ type AddModel struct {
 }
 
 func clearComponents(m *AddModel) {
+	if m.cursor == len(m.forms) {
+		m.enterStyle = m.enterStyle.BorderForeground(lipgloss.Color("#6E3F00"))
+	}
+	m.cursor = 0
 	for _, form := range m.forms {
 		switch form := form.(type) {
 		case *components.TextInputModel:
@@ -77,7 +81,6 @@ func InitialAddModel(width int) *AddModel {
 		tagSuggestions = append(tagSuggestions, tag)
 	}
 	rows.Close()
-	tagSuggestions = []string{"test"}
 
 	tags := components.InitialInput(20, "{ tags }", "Tags", width, false, tagSuggestions)
 	forms := []tea.Model{&title, &year, &tags, &medium, &status}
@@ -100,7 +103,7 @@ func InitialAddModel(width int) *AddModel {
 		textinputStyle: lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("#6E3F00")).
-			BorderTop(true),
+			BorderLeft(true),
 		enterStyle: lipgloss.NewStyle().
 			BorderStyle(lipgloss.DoubleBorder()).
 			BorderForeground(lipgloss.Color("#6E3F00")),
@@ -193,7 +196,10 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 			} else if m.cursor < len(m.forms) {
 				_, cmd = m.forms[m.cursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd) // TODO: This needs to return a navMsg to determine if I can unfocus
-				m.focused = false
+				msg, ok := cmd().(components.NavMsg)
+				if ok && bool(msg) {
+					m.focused = false
+				}
 			}
 		case "j", "down":
 			if m.cursor > len(m.forms)-1 {
@@ -242,8 +248,8 @@ func (m *AddModel) View() tea.View {
 		formView := form.View()
 		if formView.Cursor != nil {
 			c = formView.Cursor
-			c.Y += lipgloss.Height(s) + 2 // TODO: Make the + 2 not hardcoded
-			c.X += 1
+			c.Y += lipgloss.Height(s) + 1 // TODO: Make the + 2 not hardcoded
+			c.X += 2
 		}
 		if i == m.cursor {
 			s = lipgloss.JoinVertical(lipgloss.Center, s, m.textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))

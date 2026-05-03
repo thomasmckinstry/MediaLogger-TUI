@@ -5,6 +5,8 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
+type SortMsg int
+
 type SortModel struct {
 	options       []string
 	optionsCursor int
@@ -30,7 +32,7 @@ func (m SortModel) toggleText() lipgloss.Style {
 
 func InitialSort(height int) SortModel {
 	return SortModel{
-		options:       []string{"title", "release date", "genre", "theme", "medium"},
+		options:       []string{"title", "medium", "status", "tags", "release date"},
 		optionsCursor: 0,
 		selected:      false,
 		mainStyle: lipgloss.NewStyle().
@@ -51,6 +53,7 @@ func (m *SortModel) Init() tea.Cmd {
 }
 
 func (m *SortModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -66,9 +69,9 @@ func (m *SortModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.optionsCursor = len(m.options) - 1
 			}
 		}
-
+		cmd = func() tea.Msg { return SortMsg(m.optionsCursor) }
 	}
-	return m, nil
+	return m, cmd
 }
 
 func (m *SortModel) View() tea.View {

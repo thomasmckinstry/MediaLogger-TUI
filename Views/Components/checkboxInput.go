@@ -61,6 +61,7 @@ func (m *CheckboxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "esc": // Unfocus the component
 			m.selected = false
+			cmd = func() tea.Msg { return NavMsg(!m.selected) }
 		case "enter": // Add a tag from the current text input and empty the text input OR focus the component
 			if !m.selected {
 				m.selected = true
