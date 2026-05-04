@@ -164,16 +164,16 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 					log.Println(contents)
 				}
 				db := database.GetDB() //  TODO: Move this shit (whole block) into a function
-				id := database.GetWorkID(db)
+				//id := database.GetWorkID(db)
 				query, err := db.Prepare(`
-					INSERT INTO works (date_added, title, media_type, work_status, tags, year_released, work_id)
-					VALUES (?, ?, ?, ?, ?, ?, ?)
+					INSERT INTO works (date_added, title, media_type, work_status, tags, year_released)
+					VALUES (?, ?, ?, ?, ?, ?)
 				`)
 				if err != nil {
 					log.Fatal("Failed to prepare insert statement: ", err)
 				}
 				statusInt, err := strconv.Atoi(contents[statusForm])
-				_, err = query.Exec(date, contents[titleForm], contents[tagsForm], statusInt, contents[mediumForm], contents[yearForm], id)
+				_, err = query.Exec(date, contents[titleForm], contents[tagsForm], statusInt, contents[mediumForm], contents[yearForm])
 				if err != nil {
 					log.Fatal("Failed to insert to works table: ", err)
 				}
