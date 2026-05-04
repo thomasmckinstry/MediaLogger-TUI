@@ -13,6 +13,8 @@ import (
 	"github.com/thomasmckinstry/MediaLogger-TUI/Views"
 	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"golang.org/x/term"
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var (
@@ -79,9 +81,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) View() tea.View {
 	var view tea.View
-	if len(os.Getenv("DEBUG")) > 0 {
-		log.Println("main cursor at:", m.cursor)
-	}
 	switch m.currViews[m.cursor] {
 	case "home":
 		view = m.homeModel.View()
@@ -96,32 +95,25 @@ func (m *model) View() tea.View {
 func main() {
 	var err error
 	width, height, err = term.GetSize(1)
+	utils.CheckError("Failed to get terminal size: ", err)
 
 	if len(os.Getenv("DEBUG")) > 0 {
 		f, err := tea.LogToFile("debug.log", "debug")
-		if err != nil {
-			fmt.Println("fatal:", err)
-			os.Exit(1)
-		}
+		utils.CheckError("Failed to set up debug logging: ", err)
 		defer func() {
 			err = f.Close()
 			utils.CheckError("Failed to close debug.log: ", err)
 		}()
 	}
 
-	if len(os.Getenv("DEBUG")) > 0 {
-		log.Println("Successfully initialized connection to database")
-	}
-	if err != nil {
-		log.Fatal(err)
-		return
+	if len(os.Getenv("PPROF")) > 0 {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
 	}
 
 	mainModel := initialModel()
 	program := tea.NewProgram(&mainModel)
-	if len(os.Getenv("DEBUG")) > 0 {
-		log.Println("Successfully Initialized Program")
-	}
 	if _, err := program.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
