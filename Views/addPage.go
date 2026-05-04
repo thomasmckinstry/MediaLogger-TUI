@@ -28,8 +28,6 @@ type AddModel struct {
 	height         int
 	width          int
 	forms          []tea.Model
-	status         []string
-	tags           []string
 	style          lipgloss.Style
 	headerStyle    lipgloss.Style
 	textinputStyle lipgloss.Style
@@ -80,7 +78,8 @@ func InitialAddModel(width int) *AddModel {
 		}
 		tagSuggestions = append(tagSuggestions, tag)
 	}
-	rows.Close()
+	err = rows.Close()
+	utils.CheckError("Failed to close tags query: ", err)
 
 	tags := components.InitialInput(20, "{ tags }", "Tags", width, false, tagSuggestions)
 	forms := []tea.Model{&title, &year, &tags, &medium, &status}
@@ -173,11 +172,11 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 					log.Fatal("Failed to prepare insert statement: ", err)
 				}
 				statusInt, err := strconv.Atoi(contents[statusForm])
+				utils.CheckError("Failed to convert string to int: ", err)
 				_, err = query.Exec(date, contents[titleForm], contents[tagsForm], statusInt, contents[mediumForm], contents[yearForm])
-				if err != nil {
-					log.Fatal("Failed to insert to works table: ", err)
-				}
-				query.Close()
+				utils.CheckError("Failed to insert to works table: ", err)
+				err = query.Close()
+				utils.CheckError("Failed to close insert to works table: ", err)
 				cmd = func() tea.Msg { return ViewMsg(0) }
 				cmds = tea.Batch(cmds, cmd)
 				clearComponents(m)

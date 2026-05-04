@@ -17,14 +17,14 @@ type SortModel struct {
 }
 
 func (m SortModel) toggleBorder() lipgloss.Style {
-	if m.selected == true {
+	if m.selected {
 		return m.mainStyle.BorderForeground(lipgloss.Color("#6E3F00"))
 	}
 	return m.mainStyle.BorderForeground(lipgloss.Color("#D17600"))
 }
 
 func (m SortModel) toggleText() lipgloss.Style {
-	if m.selected == true {
+	if m.selected {
 		return m.textStyle.Foreground(lipgloss.Color("#6E3F00"))
 	}
 	return m.textStyle.Foreground(lipgloss.Color("#D17600"))

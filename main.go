@@ -9,17 +9,15 @@ import (
 	"log"
 	"os"
 
-	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
 	"github.com/thomasmckinstry/MediaLogger-TUI/Views"
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"golang.org/x/term"
 )
 
 var (
-	width   int
-	height  int
-	rows    []table.Row
-	columns []table.Column
+	width  int
+	height int
 )
 
 type model struct {
@@ -63,32 +61,14 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 
-		case "K", "L", "H", "J":
-			if m.currViews[m.cursor] == "home" {
+		default:
+			switch m.currViews[m.cursor] {
+			case "home":
 				_, cmd = m.homeModel.Update(msg)
-				cmds = tea.Batch(cmds, cmd)
-			} else if m.currViews[m.cursor] == "add" {
+			case "add":
 				_, cmd = m.addModel.Update(msg)
-				cmds = tea.Batch(cmds, cmd)
-			}
-		case "j", "k", "up", "down", "left", "right", "h", "l":
-			if m.currViews[m.cursor] == "home" {
-				_, cmd = m.homeModel.Update(msg)
-				cmds = tea.Batch(cmds, cmd)
-			} else if m.currViews[m.cursor] == "add" {
-				_, cmd = m.addModel.Update(msg)
-				cmds = tea.Batch(cmds, cmd)
 			}
 			cmds = tea.Batch(cmds, cmd)
-		default:
-			if m.currViews[m.cursor] == "home" {
-				_, cmd = m.homeModel.Update(msg)
-				cmds = tea.Batch(cmds, cmd)
-			} else if m.currViews[m.cursor] == "add" {
-				_, cmd = m.addModel.Update(msg)
-				cmds = tea.Batch(cmds, cmd)
-			}
-
 		}
 	}
 
@@ -102,9 +82,10 @@ func (m *model) View() tea.View {
 	if len(os.Getenv("DEBUG")) > 0 {
 		log.Println("main cursor at:", m.cursor)
 	}
-	if m.currViews[m.cursor] == "home" {
+	switch m.currViews[m.cursor] {
+	case "home":
 		view = m.homeModel.View()
-	} else if m.currViews[m.cursor] == "add" {
+	case "add":
 		view = m.addModel.View()
 	}
 
@@ -122,7 +103,10 @@ func main() {
 			fmt.Println("fatal:", err)
 			os.Exit(1)
 		}
-		defer f.Close()
+		defer func() {
+			err = f.Close()
+			utils.CheckError("Failed to close debug.log: ", err)
+		}()
 	}
 
 	if len(os.Getenv("DEBUG")) > 0 {

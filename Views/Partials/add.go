@@ -12,7 +12,7 @@ type AddModel struct {
 }
 
 func (m *AddModel) toggleBorder() lipgloss.Style {
-	if m.selected == true {
+	if m.selected {
 		return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
 	}
 	return m.style.BorderForeground(lipgloss.Color("#D17600"))

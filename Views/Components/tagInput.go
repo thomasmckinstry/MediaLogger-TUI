@@ -80,6 +80,7 @@ func (m *TagInputModel) Init() tea.Cmd {
 
 func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	var cmds tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -93,6 +94,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected = false
 			}
 			cmd = func() tea.Msg { return NavMsg(!m.selected) }
+			cmds = tea.Batch(cmds, cmd)
 		case "enter": // Add a tag from the current text input and empty the text input OR focus the component
 			if !m.selected {
 				m.tagsStyle = m.toggleBorder()
@@ -108,15 +110,19 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.tagsCursor++
 			} else { // TODO: If I could come up with a way to avoid this duplication that would be great
 				m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
+				cmds = tea.Batch(cmds, cmd)
 			}
 			cmd = func() tea.Msg { return NavMsg(!m.selected) }
+			cmds = tea.Batch(cmds, cmd)
 		case "k", "up":
 			if m.tagsCursor > 0 && !m.textInput.Focused() && m.selected {
 				m.tagsCursor--
 			} else {
 				m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
+				cmds = tea.Batch(cmds, cmd)
 			}
 			cmd = func() tea.Msg { return NavMsg(!m.selected) }
+			cmds = tea.Batch(cmds, cmd)
 		case "delete": // Delete current tag
 			if len(m.tags) > 0 && !m.textInput.Focused() {
 				m.tags = append(m.tags[:m.tagsCursor], m.tags[m.tagsCursor+1:]...)
@@ -126,9 +132,10 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		default:
 			m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
+			cmds = tea.Batch(cmds, cmd)
 		}
 	}
-	return m, cmd
+	return m, cmds
 }
 
 func (m *TagInputModel) View() tea.View {
@@ -162,8 +169,4 @@ func (m *TagInputModel) View() tea.View {
 	v := tea.NewView(s)
 	v.Cursor = c
 	return v
-}
-
-func (m TagInputModel) getInfo() (string, []string) {
-	return m.title, m.tags
 }

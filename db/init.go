@@ -3,6 +3,8 @@ package db
 import (
 	"database/sql"
 	"log"
+
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 )
 
 func init_db(db *sql.DB) {
@@ -52,9 +54,7 @@ func init_db(db *sql.DB) {
 	row, err := db.Query(`
 		SELECT 1 FROM sqlite_master WHERE type='table' AND name='status_table';
 	`)
-	if err != nil {
-		log.Fatal("Unable to determine if status_table exists: ", err)
-	}
+	utils.CheckError("Unable to determine if status_table exists: ", err)
 	if !row.Next() {
 		_, err = db.Exec(`
 			CREATE TABLE status_table (
@@ -62,9 +62,7 @@ func init_db(db *sql.DB) {
 				status_name varchar(15) NOT NULL
 			);
 		`)
-		if err != nil {
-			log.Fatal("Unable to create status_table in database: ", err)
-		}
+		utils.CheckError("Unable to create status_table in database: ", err)
 
 		_, err = db.Exec(`
 			INSERT INTO status_table (id, status_name)
@@ -75,18 +73,15 @@ func init_db(db *sql.DB) {
 				(3, 'Completed'),
 				(4, 'Dropped');
 			`)
-		if err != nil {
-			log.Fatal("Unable to insert to status_table in database: ", err)
-		}
+		utils.CheckError("Unable to insert to status_table in database: ", err)
 	}
-	row.Close()
+	err = row.Close()
+	utils.CheckError("Failed to close insert to status_table: ", err)
 
 	// TODO: The prefill on this table should probably removed, I should set up some config options or something so people can customize
 	// Could probably just keep an array in memory from a config file and index into it to convert
 	row, err = db.Query(`SELECT 1 from sqlite_master WHERE type='table' AND name='media_type_table'`)
-	if err != nil {
-		log.Fatal("Unable to determine if media_type_table exists: ", err)
-	}
+	utils.CheckError("Unable to determine if media_type_table exists: ", err)
 	if !row.Next() {
 		_, err = db.Exec(`
 			CREATE TABLE media_type_table (
@@ -94,9 +89,7 @@ func init_db(db *sql.DB) {
 				type_name varchar(25) NOT NULL
 			);
 		`)
-		if err != nil {
-			log.Fatal("Unable to create media_type_table in database: ", err)
-		}
+		utils.CheckError("Unable to create media_type_table in database: ", err)
 
 		_, err = db.Exec(`
 			INSERT INTO media_type_table (id, type_name)
@@ -110,20 +103,15 @@ func init_db(db *sql.DB) {
 				(6, 'Animated'),
 				(7, 'Live Action');
 		`)
-		if err != nil {
-			log.Fatal("Unable to insert to media_type_table in database: ", err)
-		}
+		utils.CheckError("Unable to insert to media_type_table in database: ", err)
 	}
-	row.Close()
+	err = row.Close()
+	utils.CheckError("Failed to close insert to media_type_table: ", err)
 
 	_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS tags_table (
 	tag_name varchar(25) NOT NULL PRIMARY KEY
-
 );
 	`)
-	if err != nil {
-		log.Fatal("Unable to create table in database: ", err)
-	}
-
+	utils.CheckError("Unable to create table in database: ", err)
 }

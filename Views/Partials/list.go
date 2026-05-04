@@ -35,10 +35,10 @@ func (m ListModel) deselectView() lipgloss.Style {
 func InitialList(width int, height int) ListModel {
 	db = database.GetDB()
 	row, err := db.Query(`SELECT title, media_type, work_status, tags, year_released FROM works;`)
-	defer row.Close()
-	if err != nil {
-		log.Fatal("Failed to query works table for list: ", err)
-	}
+	defer func() {
+		err = row.Close()
+		utils.CheckError("Failed to close works query: ", err)
+	}()
 
 	var rows []table.Row
 	for row.Next() {
@@ -112,7 +112,7 @@ func (m ListModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:

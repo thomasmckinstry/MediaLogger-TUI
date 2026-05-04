@@ -8,6 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/thomasmckinstry/MediaLogger-TUI/Views/Components"
 	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 )
 
 type Form interface {
@@ -26,7 +27,6 @@ type FilterModel struct {
 	cursor         int
 	height         int
 	forms          []tea.Model
-	status         []string
 	style          lipgloss.Style
 	headerStyle    lipgloss.Style
 	textinputStyle lipgloss.Style
@@ -37,7 +37,7 @@ type FilterModel struct {
 
 // TODO: This should be a utils
 func (m FilterModel) toggleBorder() lipgloss.Style {
-	if m.selected == true {
+	if m.selected {
 		return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
 	}
 	return m.style.BorderForeground(lipgloss.Color("#D17600"))
@@ -48,34 +48,28 @@ func InitialFilter(height int) FilterModel {
 
 	db := database.GetDB()
 	rows, err := db.Query(`SELECT * FROM tags_table`)
-	if err != nil {
-		log.Fatal("Failed to query tags from database: ", err)
-	}
+	utils.CheckError("Failed to query tags from db: ", err)
 	for rows.Next() {
 		var tag string
 		err = rows.Scan(&tag)
-		if err != nil {
-			log.Fatal("Failed to scan tags: ", err)
-		}
+		utils.CheckError("Failed to scan tags: ", err)
 		tagSuggestions = append(tagSuggestions, tag)
 	}
-	rows.Close()
+	err = rows.Close()
+	utils.CheckError("Failed to close tags query: ", err)
 
 	titleSuggestions := []string{}
 
 	rows, err = db.Query(`SELECT title FROM works`)
-	if err != nil {
-		log.Fatal("Failed to query tags from database: ", err)
-	}
+	utils.CheckError("Failed to query tags from database: ", err)
 	for rows.Next() {
 		var tag string
 		err = rows.Scan(&tag)
-		if err != nil {
-			log.Fatal("Failed to scan titles: ", err)
-		}
+		utils.CheckError("Failed to scan titles: ", err)
 		titleSuggestions = append(titleSuggestions, tag)
 	}
-	rows.Close()
+	err = rows.Close()
+	utils.CheckError("Failed to close title query: ", err)
 
 	titleInput := components.InitialTextInput(14, "Title", "{ title }", titleSuggestions)
 	tagsInput := components.InitialInput(5, "{ tag }", "Tag", 14-1, false, tagSuggestions)

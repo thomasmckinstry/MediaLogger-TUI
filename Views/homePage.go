@@ -10,7 +10,6 @@ import (
 )
 
 var (
-	width  int
 	height int
 
 // rows    []table.Row
@@ -60,8 +59,10 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
-		m.listModel, cmd = m.listModel.Update(msg)
+		_, cmd = m.listModel.Update(msg)
+		cmds = tea.Batch(cmds, cmd)
 		_, cmd = m.sidebarViews[1].Update(msg)
+		cmds = tea.Batch(cmds, cmd)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
@@ -103,6 +104,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 		case "j", "k", "up", "down":
 			if m.mainCursor == 1 {
 				m.listModel, cmd = m.listModel.Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			} else {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
@@ -119,7 +121,8 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 				if cmd != nil {
 					msg, ok := cmd().(partials.FilterMsg)
 					if ok {
-						m.listModel, cmd = m.listModel.Update(msg)
+						_, cmd = m.listModel.Update(msg)
+						cmds = tea.Batch(cmds, cmd)
 					}
 				}
 			}
@@ -129,7 +132,8 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 			if cmd != nil {
 				msg, ok := cmd().(partials.SortMsg)
 				if ok {
-					m.listModel, cmd = m.listModel.Update(msg)
+					_, cmd = m.listModel.Update(msg)
+					cmds = tea.Batch(cmds, cmd)
 				}
 			}
 		}
