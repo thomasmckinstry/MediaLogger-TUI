@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
@@ -18,6 +19,32 @@ type CheckboxModel struct {
 	width     int
 
 	entryStyle lipgloss.Style
+}
+
+type checkboxKeyMap struct {
+	Up      key.Binding
+	Down    key.Binding
+	Confirm key.Binding
+	Unfocus key.Binding
+}
+
+var defaultCheckboxMap = checkboxKeyMap{
+	Up: key.NewBinding(
+		key.WithKeys("k", "up"),
+		key.WithHelp("k/↑", "Move up a checkbox"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("j", "down"),
+		key.WithHelp("j/↓", "Move down a checkbox"),
+	),
+	Confirm: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "Select a checkbox"),
+	),
+	Unfocus: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "Unfocus the checkbox navigation"),
+	),
 }
 
 func (m *CheckboxModel) Clear() {
@@ -57,22 +84,22 @@ func (m *CheckboxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if len(os.Getenv("DEBUG")) > 0 {
 			log.Println("Checkbox input received", msg.String())
 		}
-		switch msg.String() {
-		case "esc": // Unfocus the component
+		switch {
+		case key.Matches(msg, defaultCheckboxMap.Unfocus): // Unfocus the component
 			m.selected = false
 			cmd = func() tea.Msg { return NavMsg(!m.selected) }
-		case "enter": // Add a tag from the current text input and empty the text input OR focus the component
+		case key.Matches(msg, defaultCheckboxMap.Confirm): // Add a tag from the current text input and empty the text input OR focus the component
 			if !m.selected {
 				m.selected = true
 			} else {
 				m.entryVals[m.cursor] = !m.entryVals[m.cursor]
 			}
-		case "j", "down": // Nav between tags
+		case key.Matches(msg, defaultCheckboxMap.Down): // Nav between tags
 			if m.cursor < len(m.entries)-1 && m.selected {
 				m.cursor++
 			}
 			cmd = func() tea.Msg { return NavMsg(!m.selected) }
-		case "k", "up":
+		case key.Matches(msg, defaultCheckboxMap.Up):
 			if m.cursor > 0 && m.selected {
 				m.cursor--
 			}

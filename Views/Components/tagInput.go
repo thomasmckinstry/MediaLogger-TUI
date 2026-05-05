@@ -1,10 +1,42 @@
 package components
 
 import (
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
+
+type tagKeyMap struct {
+	Up      key.Binding
+	Down    key.Binding
+	Confirm key.Binding
+	Unfocus key.Binding
+	Delete  key.Binding
+}
+
+var defaultTagMap = tagKeyMap{
+	Up: key.NewBinding(
+		key.WithKeys("k", "up"),
+		key.WithHelp("k/↑", "Navigate up a tag"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("j", "down"),
+		key.WithHelp("j/↓", "Navigate down a tag"),
+	),
+	Confirm: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "Focus the input, or confirm the text input"),
+	),
+	Unfocus: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "Unfocus the input"),
+	),
+	Delete: key.NewBinding(
+		key.WithKeys("delete"),
+		key.WithHelp("delete", "Remove a tag"),
+	),
+}
 
 type TagInputModel struct {
 	textInput  textinput.Model
@@ -85,8 +117,8 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		m.errorMsg += msg.String()
-		switch msg.String() {
-		case "esc": // Unfocus the component
+		switch {
+		case key.Matches(msg, defaultTagMap.Unfocus): // Unfocus the component
 			if m.textInput.Focused() {
 				m.textInput.Blur()
 			} else if m.selected {
@@ -95,7 +127,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			cmd = func() tea.Msg { return NavMsg(!m.selected) }
 			cmds = tea.Batch(cmds, cmd)
-		case "enter": // Add a tag from the current text input and empty the text input OR focus the component
+		case key.Matches(msg, defaultTagMap.Confirm): // Add a tag from the current text input and empty the text input OR focus the component
 			if !m.selected {
 				m.tagsStyle = m.toggleBorder()
 				m.selected = true
@@ -105,7 +137,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.tags = append(m.tags, m.textInput.Value())
 				m.textInput.Reset()
 			}
-		case "j", "down": // Nav between tags
+		case key.Matches(msg, defaultTagMap.Down): // Nav between tags
 			if m.tagsCursor < len(m.tags)-1 && !m.textInput.Focused() && m.selected {
 				m.tagsCursor++
 			} else { // TODO: If I could come up with a way to avoid this duplication that would be great
@@ -114,7 +146,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			cmd = func() tea.Msg { return NavMsg(!m.selected) }
 			cmds = tea.Batch(cmds, cmd)
-		case "k", "up":
+		case key.Matches(msg, defaultTagMap.Up): // Nav between tags
 			if m.tagsCursor > 0 && !m.textInput.Focused() && m.selected {
 				m.tagsCursor--
 			} else {
@@ -123,7 +155,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			cmd = func() tea.Msg { return NavMsg(!m.selected) }
 			cmds = tea.Batch(cmds, cmd)
-		case "delete": // Delete current tag
+		case key.Matches(msg, defaultTagMap.Delete):
 			if len(m.tags) > 0 && !m.textInput.Focused() {
 				m.tags = append(m.tags[:m.tagsCursor], m.tags[m.tagsCursor+1:]...)
 				if m.tagsCursor >= len(m.tags) {

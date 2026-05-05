@@ -1,10 +1,27 @@
 package components
 
 import (
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
+
+type textKeyMap struct {
+	Confirm key.Binding
+	Unfocus key.Binding
+}
+
+var defaultTextMap = textKeyMap{
+	Confirm: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "Focus the text input"),
+	),
+	Unfocus: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "Unfocus the text input"),
+	),
+}
 
 type TextInputModel struct {
 	textinput textinput.Model
@@ -46,14 +63,14 @@ func (m *TextInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
+		switch {
+		case key.Matches(msg, defaultTextMap.Confirm):
 			if m.textinput.Focused() {
 				m.textinput.Blur()
 				break
 			}
 			m.textinput.Focus()
-		case "esc":
+		case key.Matches(msg, defaultTextMap.Unfocus):
 			m.textinput.Blur()
 		}
 	}

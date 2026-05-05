@@ -1,6 +1,7 @@
 package views
 
 import (
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"encoding/json"
@@ -17,6 +18,32 @@ const (
 	tagsForm
 	statusForm
 )
+
+type AddKeyMap struct {
+	Up      key.Binding
+	Down    key.Binding
+	Focus   key.Binding
+	Unfocus key.Binding
+}
+
+var DefaultAddKeyMap = AddKeyMap{
+	Up: key.NewBinding(
+		key.WithKeys("K", "k", "up"),
+		key.WithHelp("K/k/↑", "Move up between sections"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("J", "j", "down"),
+		key.WithHelp("J/j/↓", "Move down between sections"),
+	),
+	Focus: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "Confirm an input or focus a component"),
+	),
+	Unfocus: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "Unfocus a component"),
+	),
+}
 
 type AddModel struct {
 	headerText     string
@@ -51,7 +78,7 @@ func clearComponents(m *AddModel) {
 func InitialAddModel(width int) *AddModel {
 	title := components.InitialTextInput(width, "Title", "{ title }", nil)
 	year := components.InitialTextInput(width, "Year", "{ year }", nil)
-	mediums := []string{"Movie", "Book", "Show", "Anime", "Manga", "Comic", "Show", "Animated", "Live Action"} // TODO: Query the db for this.
+	mediums := []string{"Movie", "Book", "Show", "Anime", "Manga", "Comic", "Animated", "Live Action"} // TODO: Query the db for this.
 	medium := components.InitialCheckbox(mediums, "Medium", width)
 	statuses := []string{"Pending", "Started", "Hiatus", "Completed", "Dropped"} // TODO: Query the db for this.
 	status := components.InitialCheckbox(statuses, "Status", width)
@@ -110,8 +137,8 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 		m.style = m.style.Height(msg.Height - (7))
 		m.height = msg.Height - 7
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
+		switch {
+		case key.Matches(msg, DefaultAddKeyMap.Focus):
 			if m.cursor == len(m.forms) {
 				var contents []string
 				var content string
@@ -165,19 +192,19 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 			_, cmd = m.forms[m.cursor].Update(msg)
 			cmds = tea.Batch(cmds, cmd)
 			m.focused = true
-		case "esc":
+		case key.Matches(msg, DefaultAddKeyMap.Unfocus):
 			if !m.focused {
 				clearComponents(m)
 				cmds = tea.Batch(cmds, func() tea.Msg { return (ViewMsg(0)) })
 			} else if m.cursor < len(m.forms) {
 				_, cmd = m.forms[m.cursor].Update(msg)
-				cmds = tea.Batch(cmds, cmd) // TODO: This needs to return a navMsg to determine if I can unfocus
+				cmds = tea.Batch(cmds, cmd)
 				msg, ok := cmd().(components.NavMsg)
 				if ok && bool(msg) {
 					m.focused = false
 				}
 			}
-		case "j", "down":
+		case key.Matches(msg, DefaultAddKeyMap.Down):
 			if m.cursor > len(m.forms)-1 {
 				break
 			}
@@ -192,7 +219,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 				m.cursor++
 				m.enterStyle = m.enterStyle.BorderForeground(lipgloss.Color("#D17600"))
 			}
-		case "k", "up":
+		case key.Matches(msg, DefaultAddKeyMap.Up):
 			if m.cursor == len(m.forms) {
 				m.enterStyle = m.enterStyle.BorderForeground(lipgloss.Color("#6E3F00"))
 				m.cursor--

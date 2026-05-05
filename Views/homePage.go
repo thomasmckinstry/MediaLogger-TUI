@@ -1,6 +1,7 @@
 package views
 
 import (
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	partials "github.com/thomasmckinstry/MediaLogger-TUI/Views/Partials"
@@ -10,6 +11,43 @@ import (
 )
 
 var height int
+
+type homeKeyMap struct {
+	TopLevelUp    key.Binding
+	TopLevelDown  key.Binding
+	TopLevelLeft  key.Binding
+	TopLevelRight key.Binding
+	SidebarNav    key.Binding
+	Confirm       key.Binding
+}
+
+var defaultHomeKeyMap = homeKeyMap{
+	TopLevelUp: key.NewBinding(
+		key.WithKeys("K"),
+		key.WithHelp("K", "Move up between sections"),
+	),
+	TopLevelDown: key.NewBinding(
+		key.WithKeys("J"),
+		key.WithHelp("J", "Move down between sections"),
+	),
+	TopLevelLeft: key.NewBinding(
+		key.WithKeys("H"),
+		key.WithHelp("H", "Move left between sections"),
+	),
+	TopLevelRight: key.NewBinding(
+		key.WithKeys("L"),
+		key.WithHelp("L", "Move right between sections"),
+	),
+	SidebarNav: key.NewBinding(
+		key.WithKeys("k", "up", "j", "down"),
+		key.WithHelp("k/↑", "Move up within a section"),
+		key.WithHelp("j/↓", "Move down within a section"),
+	),
+	Confirm: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "Confirm an input or focus a component"),
+	),
+}
 
 type HomeModel struct {
 	sidebarCursor int
@@ -54,12 +92,8 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 		_, cmd = m.sidebarViews[1].Update(msg)
 		cmds = tea.Batch(cmds, cmd)
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-
-		//TODO: See if  I can clean up the homepage nav so I can just have it in one condition
-		case "K":
+		switch {
+		case key.Matches(msg, defaultHomeKeyMap.TopLevelUp):
 			if m.mainCursor == 0 && m.sidebarCursor > 0 {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
@@ -67,7 +101,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
 			}
-		case "J":
+		case key.Matches(msg, defaultHomeKeyMap.TopLevelDown):
 			if m.mainCursor == 0 && m.sidebarCursor < 2 {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
@@ -75,7 +109,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
 			}
-		case "H":
+		case key.Matches(msg, defaultHomeKeyMap.TopLevelLeft):
 			if m.mainCursor > 0 {
 				m.mainCursor--
 				m.listModel, cmd = m.listModel.Update(msg)
@@ -83,7 +117,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
 			}
-		case "L":
+		case key.Matches(msg, defaultHomeKeyMap.TopLevelRight):
 			if m.mainCursor < 1 {
 				m.mainCursor++
 				m.listModel, cmd = m.listModel.Update(msg)
@@ -91,7 +125,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
 			}
-		case "j", "k", "up", "down":
+		case key.Matches(msg, defaultHomeKeyMap.SidebarNav):
 			if m.mainCursor == 1 {
 				m.listModel, cmd = m.listModel.Update(msg)
 				cmds = tea.Batch(cmds, cmd)
@@ -99,7 +133,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
 			}
-		case "enter":
+		case key.Matches(msg, defaultHomeKeyMap.Confirm):
 			if m.sidebarCursor == 0 && m.mainCursor == 0 {
 				if len(os.Getenv("DEBUG")) > 0 {
 					log.Println("homePage sending AddMsg")
