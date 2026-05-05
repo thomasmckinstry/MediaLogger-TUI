@@ -6,6 +6,7 @@ package db
 
 import (
 	"database/sql"
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"log"
 	"os"
 
@@ -18,10 +19,12 @@ func GetDB() *sql.DB {
 	var err error
 
 	if db != nil {
+		utils.DebugLog("Database already exists", nil)
 		return db
 	}
 
-	db, err := sql.Open("sqlite3", "./media.db")
+	db, err = sql.Open("sqlite3", "./media.db")
+	utils.DebugLog("Created new database instance", nil)
 	if err != nil {
 		log.Fatal("Unable to open database:", err)
 
