@@ -5,6 +5,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 )
 
 type tagKeyMap struct {
@@ -54,8 +55,6 @@ type TagInputModel struct {
 
 	errorMsg string
 }
-
-type NavMsg bool
 
 func (m *TagInputModel) Clear() {
 	m.tags = []string{}
@@ -125,7 +124,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.tagsStyle = m.toggleBorder()
 				m.selected = false
 			}
-			cmd = func() tea.Msg { return NavMsg(!m.selected) }
+			cmd = func() tea.Msg { return utils.NavMsg(!m.selected) }
 			cmds = tea.Batch(cmds, cmd)
 		case key.Matches(msg, defaultTagMap.Confirm): // Add a tag from the current text input and empty the text input OR focus the component
 			if !m.selected {
@@ -144,7 +143,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
 				cmds = tea.Batch(cmds, cmd)
 			}
-			cmd = func() tea.Msg { return NavMsg(!m.selected) }
+			cmd = func() tea.Msg { return utils.NavMsg(!m.selected) }
 			cmds = tea.Batch(cmds, cmd)
 		case key.Matches(msg, defaultTagMap.Up): // Nav between tags
 			if m.tagsCursor > 0 && !m.textInput.Focused() && m.selected {
@@ -153,7 +152,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
 				cmds = tea.Batch(cmds, cmd)
 			}
-			cmd = func() tea.Msg { return NavMsg(!m.selected) }
+			cmd = func() tea.Msg { return utils.NavMsg(!m.selected) }
 			cmds = tea.Batch(cmds, cmd)
 		case key.Matches(msg, defaultTagMap.Delete):
 			if len(m.tags) > 0 && !m.textInput.Focused() {

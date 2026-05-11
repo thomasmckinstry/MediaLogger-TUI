@@ -8,6 +8,7 @@ import (
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 )
 
 type CheckboxModel struct {
@@ -87,7 +88,7 @@ func (m *CheckboxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, defaultCheckboxMap.Unfocus): // Unfocus the component
 			m.selected = false
-			cmd = func() tea.Msg { return NavMsg(!m.selected) }
+			cmd = func() tea.Msg { return utils.NavMsg(!m.selected) }
 		case key.Matches(msg, defaultCheckboxMap.Confirm): // Add a tag from the current text input and empty the text input OR focus the component
 			if !m.selected {
 				m.selected = true
@@ -98,12 +99,12 @@ func (m *CheckboxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(m.entries)-1 && m.selected {
 				m.cursor++
 			}
-			cmd = func() tea.Msg { return NavMsg(!m.selected) }
+			cmd = func() tea.Msg { return utils.NavMsg(!m.selected) }
 		case key.Matches(msg, defaultCheckboxMap.Up):
 			if m.cursor > 0 && m.selected {
 				m.cursor--
 			}
-			cmd = func() tea.Msg { return NavMsg(!m.selected) }
+			cmd = func() tea.Msg { return utils.NavMsg(!m.selected) }
 
 		}
 	}

@@ -1,35 +1,34 @@
 package partials
 
 import (
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 )
 
 type AddModel struct {
 	text     string
 	selected bool
-	style    lipgloss.Style
+	width    int
 }
 
-func (m *AddModel) toggleBorder() lipgloss.Style {
-	if m.selected {
-		return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
-	}
-	return m.style.BorderForeground(lipgloss.Color("#D17600"))
+type addKeyMap struct {
+	Nav key.Binding
+}
+
+var defaultAddKey = addKeyMap{
+	Nav: key.NewBinding(
+		key.WithKeys("J", "H", "K", "L"),
+		key.WithHelp("H/J/K/L", "Navigate away from add"),
+	),
 }
 
 func InitialAdd() AddModel {
 	return AddModel{
 		text:     "Add",
 		selected: true,
-		style: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderTop(true).
-			BorderForeground(lipgloss.Color("#D17600")).
-			Width(18).
-			Height(1).
-			Align(lipgloss.Center).
-			MarginLeft(1),
+		width:    18,
 	}
 }
 
@@ -38,17 +37,19 @@ func (m *AddModel) Init() tea.Cmd {
 }
 
 func (m *AddModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "L", "H", "J", "K":
-			m.style = m.toggleBorder()
+		switch {
+		case key.Matches(msg, defaultAddKey.Nav):
 			m.selected = !m.selected
 		}
 	}
-	return m, nil
+	cmd = func() tea.Msg { return utils.NavMsg(true) }
+	return m, cmd
 }
 
 func (m *AddModel) View() tea.View {
-	return tea.NewView(m.style.Render(m.text))
+	return tea.NewView(lipgloss.PlaceHorizontal(m.width, lipgloss.Center, m.text))
 }

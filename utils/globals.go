@@ -2,6 +2,8 @@ package utils
 
 import "strings"
 
+type NavMsg bool
+
 // TODO: Define these with reading from the db
 const (
 	Pending int = iota

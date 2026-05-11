@@ -81,7 +81,7 @@ func InitialAddModel(width int) *AddModel {
 	mediums := []string{"Movie", "Book", "Show", "Anime", "Manga", "Comic", "Animated", "Live Action"} // TODO: Query the db for this.
 	medium := components.InitialCheckbox(mediums, "Medium", width)
 	statuses := []string{"Pending", "Started", "Hiatus", "Completed", "Dropped"} // TODO: Query the db for this.
-	status := components.InitialCheckbox(statuses, "Status", width)
+	status := components.InitialArrow(statuses, "Status", width, 3)
 
 	var tagSuggestions []string
 	db := database.GetDB()
@@ -152,19 +152,16 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 						utils.CheckError("Failed to marshal input data to JSON: ", err)
 						content = string(marshaledContent)
 					case *components.CheckboxModel:
-						inputName := form.Title
-						if inputName == "Medium" {
-							entries := form.GetContents()
-							var convertedContents []int
-							for _, entry := range entries {
-								convertedContents = append(convertedContents, utils.Medium_stoi(entry))
-							}
-							marshaledContent, err := json.Marshal(convertedContents)
-							utils.CheckError("Failed to marshal input data to JSON: ", err)
-							content = string(marshaledContent)
-						} else {
-							content = form.GetContents()[0]
+						entries := form.GetContents()
+						var convertedContents []int
+						for _, entry := range entries {
+							convertedContents = append(convertedContents, utils.Medium_stoi(entry))
 						}
+						marshaledContent, err := json.Marshal(convertedContents)
+						utils.CheckError("Failed to marshal input data to JSON: ", err)
+						content = string(marshaledContent)
+					case *components.ArrowModel:
+						content = string(utils.Status_stoi(form.GetContents()))
 					}
 					utils.CheckError("Failed to marshal input data to JSON: ", err)
 					contents = append(contents, string(content))
@@ -199,7 +196,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 			} else if m.cursor < len(m.forms) {
 				_, cmd = m.forms[m.cursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
-				msg, ok := cmd().(components.NavMsg)
+				msg, ok := cmd().(utils.NavMsg)
 				if ok && bool(msg) {
 					m.focused = false
 				}
@@ -210,7 +207,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
 			cmds = tea.Batch(cmds, cmd)
-			msg, ok := cmd().(components.NavMsg)
+			msg, ok := cmd().(utils.NavMsg)
 			if m.cursor < len(m.forms)-1 && ok && bool(msg) {
 				m.cursor++
 				_, cmd = m.forms[m.cursor].Update(msg)
@@ -229,7 +226,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
 			cmds = tea.Batch(cmds, cmd)
-			msg, ok := cmd().(components.NavMsg)
+			msg, ok := cmd().(utils.NavMsg)
 			if m.cursor > 0 && ok && bool(msg) {
 				m.cursor--
 				_, cmd = m.forms[m.cursor].Update(msg)
@@ -255,9 +252,9 @@ func (m *AddModel) View() tea.View {
 			c.X += 2
 		}
 		if i == m.cursor {
-			s = lipgloss.JoinVertical(lipgloss.Center, s, m.textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))
+			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))
 		} else {
-			s = lipgloss.JoinVertical(lipgloss.Center, s, m.textinputStyle.Render(formView.Content))
+			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(formView.Content))
 		}
 		s += "\n"
 	}

@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/thomasmckinstry/MediaLogger-TUI/Views/Components"
@@ -15,6 +16,32 @@ type Form interface {
 	GetContents() []string
 }
 
+type filterKeyMap struct {
+	Nav     key.Binding
+	Up      key.Binding
+	Down    key.Binding
+	Confirm key.Binding
+	Unfocus key.Binding
+}
+
+var filterDefaultMap = filterKeyMap{
+	Nav: key.NewBinding(
+		key.WithKeys("H", "K", "J", "L"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("j", "down"),
+	),
+	Up: key.NewBinding(
+		key.WithKeys("k", "up"),
+	),
+	Confirm: key.NewBinding(
+		key.WithKeys("enter"),
+	),
+	Unfocus: key.NewBinding(
+		key.WithKeys("esc"),
+	),
+}
+
 type FilterMsg [][]string
 
 // TODO: I can probably sub out most of this file for a huh? component
@@ -22,7 +49,6 @@ type FilterMsg [][]string
 // TODO: Need a different way to index into the components because of different Model types.
 type FilterModel struct {
 	headerText     string
-	selected       bool // Indicates if the cursor is interacting with Filter
 	focused        bool
 	cursor         int
 	height         int
@@ -33,14 +59,6 @@ type FilterModel struct {
 	enterStyle     lipgloss.Style
 
 	errorMsg string
-}
-
-// TODO: This should be a utils
-func (m FilterModel) toggleBorder() lipgloss.Style {
-	if m.selected {
-		return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
-	}
-	return m.style.BorderForeground(lipgloss.Color("#D17600"))
 }
 
 func InitialFilter(height int) FilterModel {
@@ -82,15 +100,11 @@ func InitialFilter(height int) FilterModel {
 
 	return FilterModel{
 		headerText: "Filter",
-		selected:   false,
 		focused:    false,
 		cursor:     0,
 		height:     height,
 		forms:      forms,
 		style: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("#6E3F00")).
-			BorderTop(true).
 			Width(18).
 			Height(height).
 			Align(lipgloss.Center),
@@ -114,6 +128,7 @@ func (m *FilterModel) Init() tea.Cmd {
 
 func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	var cmds tea.Cmd
 	m.errorMsg = ""
 
 	switch msg := msg.(type) {
@@ -121,8 +136,13 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.style = m.style.Height(msg.Height - (7))
 		m.height = msg.Height - 7
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
+		switch {
+		case key.Matches(msg, filterDefaultMap.Nav):
+			cmd = func() tea.Msg { return utils.NavMsg(!m.focused) }
+			utils.DebugLog("Filter Nav: ", !m.focused)
+			cmds = tea.Batch(cmds, cmd)
+			fallthrough
+		case key.Matches(msg, filterDefaultMap.Confirm):
 			if m.cursor == len(m.forms) { // Cursor on enter button
 				var contents [][]string
 				var content []string
@@ -149,18 +169,15 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
 			m.focused = true
-		case "esc":
+		case key.Matches(msg, filterDefaultMap.Unfocus):
 			_, cmd = m.forms[m.cursor].Update(msg)
 			m.focused = false
-		case "L", "H", "J", "K":
-			m.style = m.toggleBorder()
-			m.selected = !m.selected
-		case "j", "down":
+		case key.Matches(msg, filterDefaultMap.Down):
 			if m.cursor > len(m.forms)-1 {
 				break
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
-			msg, ok := cmd().(components.NavMsg)
+			msg, ok := cmd().(utils.NavMsg)
 			if m.cursor < len(m.forms)-1 && ok && bool(msg) {
 				m.cursor++
 				_, cmd = m.forms[m.cursor].Update(msg)
@@ -168,7 +185,7 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 				m.enterStyle = m.enterStyle.BorderForeground(lipgloss.Color("#D17600"))
 			}
-		case "k", "up":
+		case key.Matches(msg, filterDefaultMap.Up):
 			if m.cursor == len(m.forms) {
 				m.enterStyle = m.enterStyle.BorderForeground(lipgloss.Color("#6E3F00"))
 				m.cursor--
@@ -176,7 +193,7 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
-			msg, ok := cmd().(components.NavMsg)
+			msg, ok := cmd().(utils.NavMsg)
 			if m.cursor > 0 && ok && bool(msg) {
 				m.cursor--
 				_, cmd = m.forms[m.cursor].Update(msg)
@@ -188,8 +205,6 @@ func (m *FilterModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// TODO: Add styling to make it clear that a textbox is selected.
-// TODO: Iterate over m.forms instead of having a bunch of different conditional blocks
 func (m *FilterModel) View() tea.View {
 	var c *tea.Cursor
 	//header:
@@ -200,10 +215,10 @@ func (m *FilterModel) View() tea.View {
 		formView := form.View()
 		if formView.Cursor != nil {
 			c = formView.Cursor
-			c.Y += lipgloss.Height(s) + 2 // TODO: Make the + 2 not hardcoded
+			c.Y += lipgloss.Height(s) + 2
 			c.X += 1
 		}
-		if i == m.cursor && m.selected {
+		if i == m.cursor {
 			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))
 		} else {
 			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(formView.Content))

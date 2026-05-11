@@ -5,6 +5,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 )
 
 type textKeyMap struct {
@@ -76,7 +77,7 @@ func (m *TextInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	m.textinput, cmd = m.textinput.Update(msg)
 	cmds = tea.Batch(cmds, cmd)
-	cmd = func() tea.Msg { return NavMsg(!m.textinput.Focused()) }
+	cmd = func() tea.Msg { return utils.NavMsg(!m.textinput.Focused()) }
 	cmds = tea.Batch(cmds, cmd)
 	return m, cmds
 }

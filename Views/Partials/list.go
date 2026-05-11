@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 
+	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -18,18 +19,30 @@ import (
 
 var db *sql.DB
 
+type listKeyMap struct {
+	Nav   key.Binding
+	Focus key.Binding
+}
+
+type SortMsg int
+
+var defaultListMap = listKeyMap{
+	Nav:   key.NewBinding(key.WithKeys("H", "L")),
+	Focus: key.NewBinding(key.WithKeys("esc")),
+}
+
 type ListModel struct {
 	style lipgloss.Style
 	table table.Model
 	rows  []table.Row
 }
 
-func (m ListModel) selectView() lipgloss.Style {
-	return m.style.BorderForeground(lipgloss.Color("#D17600"))
-}
-
-func (m ListModel) deselectView() lipgloss.Style {
-	return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
+func (m ListModel) toggleSelected() lipgloss.Style {
+	if !m.table.Focused() {
+		return m.style.BorderForeground(lipgloss.Color("#D17600"))
+	} else {
+		return m.style.BorderForeground(lipgloss.Color("#6E3F00"))
+	}
 }
 
 func InitialList(width int, height int) ListModel {
@@ -82,6 +95,7 @@ func InitialList(width int, height int) ListModel {
 		table.WithHeight(height),
 		table.WithWidth(width),
 	)
+	t.Blur()
 
 	s := table.DefaultStyles()
 	s.Header = s.Header.
@@ -114,6 +128,7 @@ func (m ListModel) Init() tea.Cmd {
 
 func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	utils.DebugLog("List got: ", msg)
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.style = m.style.Height(msg.Height).Width(msg.Width - 18)
@@ -127,20 +142,21 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		})
 		m.table.Update(msg)
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "esc":
+		switch {
+		case key.Matches(msg, defaultListMap.Focus):
 			if m.table.Focused() {
 				m.table.Blur()
 			} else {
 				m.table.Focus()
 			}
-		case "L":
-			m.style = m.selectView()
-			m.table.Focus()
-		case "H":
-			m.style = m.deselectView()
-			m.table.Blur()
-		case "j", "k", "up", "down":
+		case key.Matches(msg, defaultListMap.Nav):
+			m.style = m.toggleSelected()
+			if m.table.Focused() {
+				m.table.Blur()
+			} else {
+				m.table.Focus()
+			}
+		default:
 			m.table, cmd = m.table.Update(msg)
 		}
 	case SortMsg:
