@@ -88,7 +88,7 @@ func InitialAddModel(width int) *AddModel {
 	err = rows.Close()
 	utils.CheckError("Failed to close tags query: ", err)
 
-	tags := components.InitialInput(20, "{ tags }", "Tags", width, false, tagSuggestions)
+	tags := components.InitialInput(20, "{ tags }", "Tags", width-1, false, tagSuggestions)
 	forms := []tea.Model{&title, &year, &tags, &medium, &status}
 	return &AddModel{
 		headerText: "Add Work:",
@@ -105,8 +105,9 @@ func InitialAddModel(width int) *AddModel {
 			BorderStyle(lipgloss.DoubleBorder()),
 		headerStyle: lipgloss.NewStyle().
 			Align(lipgloss.Center).
-			Width(20),
+			Width(width + 2),
 		textinputStyle: lipgloss.NewStyle().
+			Width(width + 3).
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("#6E3F00")).
 			BorderLeft(true),

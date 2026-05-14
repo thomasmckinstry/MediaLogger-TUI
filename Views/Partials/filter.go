@@ -62,6 +62,7 @@ type FilterModel struct {
 }
 
 func InitialFilter(height int) FilterModel {
+	width := 14
 	tagSuggestions := []string{}
 
 	db := database.GetDB()
@@ -89,12 +90,12 @@ func InitialFilter(height int) FilterModel {
 	err = rows.Close()
 	utils.CheckError("Failed to close title query: ", err)
 
-	titleInput := components.InitialTextInput(14, "Title", "{ title }", titleSuggestions)
-	tagsInput := components.InitialInput(5, "{ tag }", "Tag", 14-1, false, tagSuggestions)
+	titleInput := components.InitialTextInput(width, "Title", "{ title }", titleSuggestions)
+	tagsInput := components.InitialInput(5, "{ tag }", "Tag", width-1, false, tagSuggestions)
 	mediums := []string{"Movie", "Book", "Show", "Anime", "Manga", "Comic", "Animated", "Live Action"} // TODO: Query the db for this.
-	mediumInput := components.InitialCheckbox(mediums, "Medium", 14)
+	mediumInput := components.InitialCheckbox(mediums, "Medium", width)
 	statuses := []string{"Pending", "Started", "Hiatus", "Completed", "Dropped"} // TODO: Query the db for this.
-	statusInput := components.InitialCheckbox(statuses, "Status", 14)
+	statusInput := components.InitialCheckbox(statuses, "Status", width)
 
 	forms := []tea.Model{&titleInput, &tagsInput, &mediumInput, &statusInput}
 
@@ -105,14 +106,14 @@ func InitialFilter(height int) FilterModel {
 		height:     height,
 		forms:      forms,
 		style: lipgloss.NewStyle().
-			Width(18).
+			Width(width + 4).
 			Height(height).
 			Align(lipgloss.Center),
 		headerStyle: lipgloss.NewStyle().
 			Align(lipgloss.Center).
-			Width(16),
+			Width(width + 2),
 		textinputStyle: lipgloss.NewStyle().
-			Width(17).
+			Width(width + 3).
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("#6E3F00")).
 			BorderLeft(true),
