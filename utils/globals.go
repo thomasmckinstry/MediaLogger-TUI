@@ -6,6 +6,8 @@ type NavMsg bool
 
 type NewWorkMsg []string
 
+type ViewMsg int
+
 // TODO: Define these with reading from the db
 const (
 	Pending int = iota

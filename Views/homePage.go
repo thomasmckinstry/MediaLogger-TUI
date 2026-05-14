@@ -6,7 +6,7 @@ import (
 	"charm.land/lipgloss/v2"
 	components "github.com/thomasmckinstry/MediaLogger-TUI/Views/Components"
 	partials "github.com/thomasmckinstry/MediaLogger-TUI/Views/Partials"
-	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
+	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
 
 	"log"
 	"os"
@@ -66,8 +66,6 @@ type HomeModel struct {
 	formStyle     lipgloss.Style
 }
 
-type ViewMsg int
-
 func InitialHome(width int, height int) *HomeModel {
 	list := partials.InitialList(width-19, height)
 	add := partials.InitialAdd() // height = 1 Note: I think each side of the border adds 1
@@ -100,7 +98,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 	var cmds tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
-	case utils.NewWorkMsg:
+	case NewWorkMsg:
 		_, cmd = m.listModel.Update(msg)
 	case tea.WindowSizeMsg:
 		_, cmd = m.listModel.Update(msg)
@@ -112,7 +110,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 		case key.Matches(msg, defaultHomeKeyMap.TopLevelUp):
 			if m.mainCursor == 0 && m.sidebarCursor > 0 {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				nav, ok := cmd().(utils.NavMsg)
+				nav, ok := cmd().(NavMsg)
 				if ok && nav == true {
 					m.sidebarCursor--
 					_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
@@ -122,7 +120,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 		case key.Matches(msg, defaultHomeKeyMap.TopLevelDown):
 			if m.mainCursor == 0 && m.sidebarCursor < 2 {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
-				nav, ok := cmd().(utils.NavMsg)
+				nav, ok := cmd().(NavMsg)
 				if ok && nav == true {
 					m.sidebarCursor++
 					_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
@@ -175,7 +173,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 			cmds = tea.Batch(cmds, cmd)
 			sort, ok := m.sidebarViews[m.sidebarCursor].(*components.ArrowModel)
 			if ok {
-				utils.DebugLog("Sending SortMsg: ", partials.SortMsg(sort.OptionsCursor))
+				DebugLog("Sending SortMsg: ", partials.SortMsg(sort.OptionsCursor))
 				_, cmd = m.listModel.Update(partials.SortMsg(sort.OptionsCursor))
 				cmds = tea.Batch(cmds, cmd)
 			}

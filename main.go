@@ -11,7 +11,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/thomasmckinstry/MediaLogger-TUI/Views"
-	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
+	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"golang.org/x/term"
 	"net/http"
 	_ "net/http/pprof"
@@ -31,7 +31,7 @@ type model struct {
 
 func initialModel() model {
 	homeAddr := views.InitialHome(width, height)
-	addAddr := views.InitialAddModel(22)
+	addAddr := views.InitialAddModel(22, height-5)
 	return model{
 		currViews: make([]string, 2),
 		homeModel: homeAddr,
@@ -50,9 +50,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
-	case utils.NewWorkMsg:
+	case NewWorkMsg:
 		_, cmd = m.homeModel.Update(msg)
-	case views.ViewMsg:
+	case ViewMsg:
 		if len(os.Getenv("DEBUG")) > 0 {
 			log.Println("main received ViewMsg for ", int(msg))
 		}
@@ -97,14 +97,14 @@ func (m *model) View() tea.View {
 func main() {
 	var err error
 	width, height, err = term.GetSize(1)
-	utils.CheckError("Failed to get terminal size: ", err)
+	CheckError("Failed to get terminal size: ", err)
 
 	if len(os.Getenv("DEBUG")) > 0 {
 		f, err := tea.LogToFile("debug.log", "debug")
-		utils.CheckError("Failed to set up debug logging: ", err)
+		CheckError("Failed to set up debug logging: ", err)
 		defer func() {
 			err = f.Close()
-			utils.CheckError("Failed to close debug.log: ", err)
+			CheckError("Failed to close debug.log: ", err)
 		}()
 	}
 
