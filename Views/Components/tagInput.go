@@ -153,6 +153,7 @@ func (m *TagInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		default:
 			m.textInput, cmd = m.textInput.Update(msg) // Default to typing in the text input
+			cmd = func() tea.Msg { return utils.NavMsg(!m.selected) }
 			cmds = tea.Batch(cmds, cmd)
 		}
 	}

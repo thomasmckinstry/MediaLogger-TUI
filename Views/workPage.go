@@ -18,6 +18,7 @@ type WorkPageModel struct {
 	tabCursor     int
 	mainCursor    int
 	rightCursor   int
+	writingCursor int
 	tabStyle      lipgloss.Style
 	tabsStyle     lipgloss.Style
 	buttonStyle   lipgloss.Style
@@ -49,6 +50,8 @@ const (
 	rightCursorCount
 )
 
+var writeHeader = []string{"NOTE", "REVIEW"}
+
 var (
 	unfocused = lipgloss.Color("#6E3F00")
 	focused   = lipgloss.Color("#D17600")
@@ -75,14 +78,10 @@ func renderFocused(style lipgloss.Style, content string, isFocused bool) string 
 
 func InitialWorkPage(width, height int) *WorkPageModel {
 	workForm := components.InitialWorkFormModel(22, height)
-	//textArea := textarea.New()
-	//textArea.Focus()
-	//textArea, _ = textArea.Update(textarea.Blink())
 
 	ti := textarea.New()
 	ti.SetVirtualCursor(false)
 	ti.SetStyles(textarea.DefaultStyles(true)) // default to dark styles.
-	ti.Focus()
 
 	return &WorkPageModel{
 		work:     workForm,
@@ -126,7 +125,6 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd, cmds tea.Cmd
 	)
-	DebugLog("WorkPageModel got: ", msg)
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -134,14 +132,18 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, defaultWorkMap.Confirm):
-			if m.mainCursor == work && !m.focused {
+			if m.mainCursor == work && !m.focused && !m.writing {
 				m.focused = true
 			} else if m.mainCursor == add && m.rightCursor == header && !m.writing {
 				m.writing = true
 				return m, cmds
+			} else if m.writing && m.writingCursor == 0 && !m.textArea.Focused() {
+				m.textArea.Focus()
+				return m, cmd
 			} else {
 				m.work, cmd = m.work.Update(msg)
 			}
+			cmds = tea.Batch(cmds, cmd)
 		case key.Matches(msg, defaultWorkMap.Exit):
 			if m.mainCursor == work {
 				_, cmd = m.work.Update(msg)
@@ -151,19 +153,20 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.focused = false
 				}
 			} else if m.writing {
-				m.writing = false
-				m.textArea.Reset()
+				if m.textArea.Focused() {
+					m.textArea.Blur()
+				} else {
+					m.writing = false
+					m.textArea.Reset()
+				}
 			} else {
 				cmd = func() tea.Msg { return ViewMsg(0) }
 			}
 		case key.Matches(msg, defaultWorkMap.TopLevelRight):
-			if m.mainCursor < mainCursorCount-1 && !m.writing {
+			if m.mainCursor < mainCursorCount-1 && !m.focused {
+				m.mainCursor++
+			} else if m.mainCursor == work {
 				_, cmd = m.work.Update(msg)
-				cmds = tea.Batch(cmds, cmd)
-				nav, ok := cmd().(NavMsg)
-				if ok && bool(nav) {
-					m.mainCursor++
-				}
 			}
 		case key.Matches(msg, defaultWorkMap.TopLevelLeft):
 			if m.mainCursor > work && !m.writing {
@@ -178,12 +181,16 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.rightCursor++
 			} else if m.focused {
 				_, cmd = m.work.Update(msg)
+			} else if m.writing && !m.textArea.Focused() && m.writingCursor == 0 {
+				m.writingCursor++
 			}
 		case key.Matches(msg, defaultWorkMap.TopLevelUp):
 			if m.mainCursor > work && m.rightCursor > header && !m.writing {
 				m.rightCursor--
 			} else if m.focused {
 				_, cmd = m.work.Update(msg)
+			} else if m.writing && m.writingCursor > 0 {
+				m.writingCursor--
 			}
 		case key.Matches(msg, defaultWorkMap.Left):
 			if m.mainCursor == tabs && m.rightCursor == header && !m.writing {
@@ -206,7 +213,7 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.textArea, cmd = m.textArea.Update(msg)
 	}
 
-	if m.writing {
+	if m.textArea.Focused() {
 		m.textArea, cmd = m.textArea.Update(msg)
 	}
 
@@ -222,8 +229,18 @@ func (m *WorkPageModel) View() tea.View {
 	)
 
 	if m.writing {
-		v = tea.NewView(m.textArea.View())
+		writingHeader := "NEW " + writeHeader[m.tabCursor]
+		textarea := renderFocused(m.tabsStyle, m.textArea.View(), m.writingCursor == 0)
+		button := renderFocused(m.buttonStyle, "CONFIRM", m.writingCursor == 1)
+
+		s = lipgloss.JoinVertical(lipgloss.Center, writingHeader, textarea, button)
+
+		v = tea.NewView(s)
 		c = m.textArea.Cursor()
+		if c != nil {
+			c.Y += 2
+			c.X += 1
+		}
 		v.Cursor = c
 		v.AltScreen = true
 		return v
