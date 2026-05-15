@@ -251,8 +251,7 @@ func (m *WorkFormModel) View() tea.View {
 		formView := form.View()
 		if formView.Cursor != nil {
 			c = formView.Cursor
-			c.Y += lipgloss.Height(s) + 1 // TODO: Make the + 2 not hardcoded
-			c.X += 2
+			c.Y += lipgloss.Height(s)
 		}
 		if i == m.cursor {
 			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))

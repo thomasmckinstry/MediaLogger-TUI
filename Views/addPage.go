@@ -47,7 +47,13 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 func (m *AddModel) View() tea.View {
 	var c *tea.Cursor
 
-	v := tea.NewView(m.style.Render(m.form.View().Content))
+	formView := m.form.View()
+	c = formView.Cursor
+	if c != nil {
+		c.Y += 1
+		c.X += 2
+	}
+	v := tea.NewView(m.style.Render(formView.Content))
 	v.Cursor = c
 	v.AltScreen = true
 	return v

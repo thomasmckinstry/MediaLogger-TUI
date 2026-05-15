@@ -10,10 +10,10 @@ import (
 
 type WorkPageModel struct {
 	work          *components.WorkFormModel
+	focused       bool
 	width, height int
 	tabCursor     int
 	mainCursor    int
-	headerCursor  int
 	rightCursor   int
 	tabStyle      lipgloss.Style
 	tabsStyle     lipgloss.Style
@@ -28,8 +28,23 @@ type workKeyMap struct {
 	TopLevelLeft  key.Binding
 	TopLevelRight key.Binding
 	Confirm       key.Binding
+	Left          key.Binding
+	Right         key.Binding
 	Exit          key.Binding
 }
+
+const (
+	work int = iota
+	tabs
+	add
+	mainCursorCount
+)
+
+const (
+	header int = iota
+	display
+	rightCursorCount
+)
 
 var (
 	unfocused = lipgloss.Color("#6E3F00")
@@ -41,8 +56,18 @@ var defaultWorkMap = workKeyMap{
 	TopLevelDown:  key.NewBinding(key.WithKeys("J")),
 	TopLevelLeft:  key.NewBinding(key.WithKeys("H")),
 	TopLevelRight: key.NewBinding(key.WithKeys("L")),
+	Left:          key.NewBinding(key.WithKeys("h", "left")),
+	Right:         key.NewBinding(key.WithKeys("l", "right")),
 	Confirm:       key.NewBinding(key.WithKeys("enter")),
 	Exit:          key.NewBinding(key.WithKeys("esc")),
+}
+
+func renderFocused(style lipgloss.Style, content string, isFocused bool) string {
+	if isFocused {
+		return style.BorderForeground(focused).Render(content)
+	} else {
+		return style.Render(content)
+	}
 }
 
 func InitialWorkPage(width, height int) *WorkPageModel {
@@ -64,13 +89,17 @@ func InitialWorkPage(width, height int) *WorkPageModel {
 		detailsStyle: lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderRight(true).
+			MarginRight(1).
 			BorderForeground(unfocused),
 		buttonStyle: lipgloss.NewStyle().
+			PaddingLeft(2).
+			PaddingRight(2).
 			BorderStyle(lipgloss.DoubleBorder()).
 			BorderForeground(unfocused),
 		displayStyle: lipgloss.NewStyle().
 			BorderStyle(lipgloss.DoubleBorder()).
-			Width(width - 23).
+			PaddingRight(1).
+			Width(width - 28).
 			BorderTop(true).
 			BorderForeground(unfocused),
 	}
@@ -90,8 +119,54 @@ func (m *WorkPageModel) Update(msg tea.Msg) (*WorkPageModel, tea.Cmd) {
 		_, cmd = m.work.Update(msg)
 	case tea.KeyMsg:
 		switch {
+		case key.Matches(msg, defaultWorkMap.Confirm):
+			if m.mainCursor == work && !m.focused {
+				m.focused = true
+			} else {
+				m.work, cmd = m.work.Update(msg)
+			}
 		case key.Matches(msg, defaultWorkMap.Exit):
-			cmd = func() tea.Msg { return ViewMsg(0) }
+			_, cmd = m.work.Update(msg)
+			_, ok := cmd().(ViewMsg)
+			if ok && m.focused {
+				cmd = nil
+				m.focused = false
+			}
+		case key.Matches(msg, defaultWorkMap.TopLevelRight):
+			if m.mainCursor < mainCursorCount {
+				_, cmd = m.work.Update(msg)
+				cmds = tea.Batch(cmds, cmd)
+				nav, ok := cmd().(NavMsg)
+				if ok && bool(nav) {
+					m.mainCursor++
+				}
+			}
+		case key.Matches(msg, defaultWorkMap.TopLevelLeft):
+			if m.mainCursor > work {
+				m.mainCursor--
+				_, cmd = m.work.Update(msg)
+				cmds = tea.Batch(cmds, cmd)
+			}
+		case key.Matches(msg, defaultWorkMap.TopLevelDown):
+			if m.mainCursor > work && m.rightCursor < display {
+				m.rightCursor++
+			}
+		case key.Matches(msg, defaultWorkMap.TopLevelUp):
+			if m.mainCursor > work && m.rightCursor > header {
+				m.rightCursor--
+			}
+		case key.Matches(msg, defaultWorkMap.Left):
+			if m.mainCursor == tabs && m.rightCursor == header {
+				m.tabCursor = 0
+			}
+		case key.Matches(msg, defaultWorkMap.Right):
+			if m.mainCursor == tabs && m.rightCursor == header {
+				m.tabCursor = 1
+			}
+		default:
+			if m.mainCursor == work && m.focused {
+				m.work, cmd = m.work.Update(msg)
+			}
 		}
 	}
 
@@ -104,18 +179,38 @@ func (m *WorkPageModel) View() tea.View {
 		c *tea.Cursor
 		s string
 	)
-	s = lipgloss.JoinHorizontal(lipgloss.Top, s, m.detailsStyle.Render(m.work.View().Content))
 
-	header := m.buttonStyle.Render(lipgloss.PlaceHorizontal(10, lipgloss.Center, "ADD"))
+	workView := m.work.View()
+	c = workView.Cursor
+	details := workView.Content
+	isFocused := m.mainCursor == work
+	details = renderFocused(m.detailsStyle, details, isFocused)
 
-	notes := m.tabStyle.Render(lipgloss.PlaceHorizontal(10, lipgloss.Center, "NOTES"))
-	reviews := m.tabStyle.Render(lipgloss.PlaceHorizontal(10, lipgloss.Center, "REVIEWS"))
+	s = lipgloss.JoinHorizontal(lipgloss.Top, s, details)
 
-	tabs := m.tabsStyle.Render(lipgloss.JoinHorizontal(lipgloss.Top, notes, " ", reviews))
-	header = lipgloss.JoinHorizontal(lipgloss.Top, tabs, header)
-	display := m.displayStyle.Render("")
+	headerContent := "ADD"
+	isFocused = m.mainCursor == add && m.rightCursor == header
+	headerContent = renderFocused(m.buttonStyle, headerContent, isFocused)
 
-	rightSide := lipgloss.JoinVertical(lipgloss.Left, header, display)
+	renderedTabs := []string{}
+	tabsArr := []string{"NOTES", "REVIEWS"}
+	for i, tab := range tabsArr {
+		tab = lipgloss.PlaceHorizontal(9, lipgloss.Center, tab)
+		isFocused = m.tabCursor == i
+		renderedTabs = append(renderedTabs, renderFocused(m.tabStyle, tab, isFocused))
+	}
+
+	tabsContent := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs[0], " ", renderedTabs[1])
+	isFocused = m.mainCursor == tabs && m.rightCursor == header
+	tabsContent = renderFocused(m.tabsStyle, tabsContent, isFocused)
+
+	headerContent = lipgloss.JoinHorizontal(lipgloss.Top, tabsContent, headerContent)
+
+	displayContent := ""
+	isFocused = m.mainCursor > work && m.rightCursor == display
+	displayContent = renderFocused(m.displayStyle, displayContent, isFocused)
+
+	rightSide := lipgloss.JoinVertical(lipgloss.Left, headerContent, displayContent)
 
 	s = lipgloss.JoinHorizontal(lipgloss.Top, s, rightSide)
 
