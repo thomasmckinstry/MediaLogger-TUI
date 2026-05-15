@@ -11,6 +11,15 @@ import (
 type WorkPageModel struct {
 	work          *components.WorkFormModel
 	width, height int
+	tabCursor     int
+	mainCursor    int
+	headerCursor  int
+	rightCursor   int
+	tabStyle      lipgloss.Style
+	tabsStyle     lipgloss.Style
+	buttonStyle   lipgloss.Style
+	displayStyle  lipgloss.Style
+	detailsStyle  lipgloss.Style
 }
 
 type workKeyMap struct {
@@ -21,6 +30,11 @@ type workKeyMap struct {
 	Confirm       key.Binding
 	Exit          key.Binding
 }
+
+var (
+	unfocused = lipgloss.Color("#6E3F00")
+	focused   = lipgloss.Color("#D17600")
+)
 
 var defaultWorkMap = workKeyMap{
 	TopLevelUp:    key.NewBinding(key.WithKeys("K")),
@@ -37,6 +51,28 @@ func InitialWorkPage(width, height int) *WorkPageModel {
 		work:   workForm,
 		width:  width,
 		height: height,
+		tabStyle: lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderBottom(true).
+			BorderForeground(unfocused),
+		tabsStyle: lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderTop(true).
+			MarginLeft(1).
+			MarginRight(1).
+			BorderForeground(unfocused),
+		detailsStyle: lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderRight(true).
+			BorderForeground(unfocused),
+		buttonStyle: lipgloss.NewStyle().
+			BorderStyle(lipgloss.DoubleBorder()).
+			BorderForeground(unfocused),
+		displayStyle: lipgloss.NewStyle().
+			BorderStyle(lipgloss.DoubleBorder()).
+			Width(width - 23).
+			BorderTop(true).
+			BorderForeground(unfocused),
 	}
 }
 
@@ -50,6 +86,8 @@ func (m *WorkPageModel) Update(msg tea.Msg) (*WorkPageModel, tea.Cmd) {
 	)
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		_, cmd = m.work.Update(msg)
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, defaultWorkMap.Exit):
@@ -66,7 +104,20 @@ func (m *WorkPageModel) View() tea.View {
 		c *tea.Cursor
 		s string
 	)
-	s = lipgloss.JoinHorizontal(lipgloss.Top, s, m.work.View().Content)
+	s = lipgloss.JoinHorizontal(lipgloss.Top, s, m.detailsStyle.Render(m.work.View().Content))
+
+	header := m.buttonStyle.Render(lipgloss.PlaceHorizontal(10, lipgloss.Center, "ADD"))
+
+	notes := m.tabStyle.Render(lipgloss.PlaceHorizontal(10, lipgloss.Center, "NOTES"))
+	reviews := m.tabStyle.Render(lipgloss.PlaceHorizontal(10, lipgloss.Center, "REVIEWS"))
+
+	tabs := m.tabsStyle.Render(lipgloss.JoinHorizontal(lipgloss.Top, notes, " ", reviews))
+	header = lipgloss.JoinHorizontal(lipgloss.Top, tabs, header)
+	display := m.displayStyle.Render("")
+
+	rightSide := lipgloss.JoinVertical(lipgloss.Left, header, display)
+
+	s = lipgloss.JoinHorizontal(lipgloss.Top, s, rightSide)
 
 	v := tea.NewView(s)
 	v.Cursor = c

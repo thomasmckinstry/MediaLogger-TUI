@@ -36,6 +36,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.style = m.style.Height(msg.Height - (7))
+		m.form.Update(msg)
 	default:
 		_, cmd = m.form.Update(msg)
 		cmds = tea.Batch(cmds, cmd)

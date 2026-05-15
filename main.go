@@ -64,7 +64,14 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.cursor = int(msg)
 	case tea.WindowSizeMsg:
-		_, cmd = m.homeModel.Update(msg)
+		switch m.cursor {
+		case home:
+			_, cmd = m.homeModel.Update(msg)
+		case work:
+			_, cmd = m.workPageModel.Update(msg)
+		case add:
+			_, cmd = m.addModel.Update(msg)
+		}
 		cmds = tea.Batch(cmds, cmd)
 	case tea.KeyMsg:
 		switch msg.String() {
