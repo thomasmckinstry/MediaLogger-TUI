@@ -136,7 +136,7 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, defaultWorkMap.Confirm):
 			if m.mainCursor == work && !m.focused {
 				m.focused = true
-			} else if m.mainCursor == add && m.rightCursor == header {
+			} else if m.mainCursor == add && m.rightCursor == header && !m.writing {
 				m.writing = true
 				return m, cmds
 			} else {
@@ -152,6 +152,7 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			} else if m.writing {
 				m.writing = false
+				m.textArea.Reset()
 			} else {
 				cmd = func() tea.Msg { return ViewMsg(0) }
 			}
@@ -169,22 +170,32 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.mainCursor--
 				_, cmd = m.work.Update(msg)
 				cmds = tea.Batch(cmds, cmd)
+			} else if m.focused {
+				_, cmd = m.work.Update(msg)
 			}
 		case key.Matches(msg, defaultWorkMap.TopLevelDown):
 			if m.mainCursor > work && m.rightCursor < display && !m.writing {
 				m.rightCursor++
+			} else if m.focused {
+				_, cmd = m.work.Update(msg)
 			}
 		case key.Matches(msg, defaultWorkMap.TopLevelUp):
 			if m.mainCursor > work && m.rightCursor > header && !m.writing {
 				m.rightCursor--
+			} else if m.focused {
+				_, cmd = m.work.Update(msg)
 			}
 		case key.Matches(msg, defaultWorkMap.Left):
 			if m.mainCursor == tabs && m.rightCursor == header && !m.writing {
 				m.tabCursor = 0
+			} else if m.focused {
+				_, cmd = m.work.Update(msg)
 			}
 		case key.Matches(msg, defaultWorkMap.Right):
 			if m.mainCursor == tabs && m.rightCursor == header && !m.writing {
 				m.tabCursor = 1
+			} else if m.focused {
+				_, cmd = m.work.Update(msg)
 			}
 		default:
 			if m.mainCursor == work && m.focused {
