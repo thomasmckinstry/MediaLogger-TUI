@@ -2,6 +2,7 @@ package views
 
 import (
 	key "charm.land/bubbles/v2/key"
+	textarea "charm.land/bubbles/v2/textarea"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	components "github.com/thomasmckinstry/MediaLogger-TUI/Views/Components"
@@ -10,7 +11,9 @@ import (
 
 type WorkPageModel struct {
 	work          *components.WorkFormModel
+	textArea      textarea.Model
 	focused       bool
+	writing       bool
 	width, height int
 	tabCursor     int
 	mainCursor    int
@@ -72,10 +75,20 @@ func renderFocused(style lipgloss.Style, content string, isFocused bool) string 
 
 func InitialWorkPage(width, height int) *WorkPageModel {
 	workForm := components.InitialWorkFormModel(22, height)
+	//textArea := textarea.New()
+	//textArea.Focus()
+	//textArea, _ = textArea.Update(textarea.Blink())
+
+	ti := textarea.New()
+	ti.SetVirtualCursor(false)
+	ti.SetStyles(textarea.DefaultStyles(true)) // default to dark styles.
+	ti.Focus()
+
 	return &WorkPageModel{
-		work:   workForm,
-		width:  width,
-		height: height,
+		work:     workForm,
+		textArea: ti,
+		width:    width,
+		height:   height,
 		tabStyle: lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderBottom(true).
@@ -109,10 +122,11 @@ func (m *WorkPageModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m *WorkPageModel) Update(msg tea.Msg) (*WorkPageModel, tea.Cmd) {
+func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd, cmds tea.Cmd
 	)
+	DebugLog("WorkPageModel got: ", msg)
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -122,18 +136,27 @@ func (m *WorkPageModel) Update(msg tea.Msg) (*WorkPageModel, tea.Cmd) {
 		case key.Matches(msg, defaultWorkMap.Confirm):
 			if m.mainCursor == work && !m.focused {
 				m.focused = true
+			} else if m.mainCursor == add && m.rightCursor == header {
+				m.writing = true
+				return m, cmds
 			} else {
 				m.work, cmd = m.work.Update(msg)
 			}
 		case key.Matches(msg, defaultWorkMap.Exit):
-			_, cmd = m.work.Update(msg)
-			_, ok := cmd().(ViewMsg)
-			if ok && m.focused {
-				cmd = nil
-				m.focused = false
+			if m.mainCursor == work {
+				_, cmd = m.work.Update(msg)
+				_, ok := cmd().(ViewMsg)
+				if ok && m.focused {
+					cmd = nil
+					m.focused = false
+				}
+			} else if m.writing {
+				m.writing = false
+			} else {
+				cmd = func() tea.Msg { return ViewMsg(0) }
 			}
 		case key.Matches(msg, defaultWorkMap.TopLevelRight):
-			if m.mainCursor < mainCursorCount {
+			if m.mainCursor < mainCursorCount-1 && !m.writing {
 				_, cmd = m.work.Update(msg)
 				cmds = tea.Batch(cmds, cmd)
 				nav, ok := cmd().(NavMsg)
@@ -142,32 +165,38 @@ func (m *WorkPageModel) Update(msg tea.Msg) (*WorkPageModel, tea.Cmd) {
 				}
 			}
 		case key.Matches(msg, defaultWorkMap.TopLevelLeft):
-			if m.mainCursor > work {
+			if m.mainCursor > work && !m.writing {
 				m.mainCursor--
 				_, cmd = m.work.Update(msg)
 				cmds = tea.Batch(cmds, cmd)
 			}
 		case key.Matches(msg, defaultWorkMap.TopLevelDown):
-			if m.mainCursor > work && m.rightCursor < display {
+			if m.mainCursor > work && m.rightCursor < display && !m.writing {
 				m.rightCursor++
 			}
 		case key.Matches(msg, defaultWorkMap.TopLevelUp):
-			if m.mainCursor > work && m.rightCursor > header {
+			if m.mainCursor > work && m.rightCursor > header && !m.writing {
 				m.rightCursor--
 			}
 		case key.Matches(msg, defaultWorkMap.Left):
-			if m.mainCursor == tabs && m.rightCursor == header {
+			if m.mainCursor == tabs && m.rightCursor == header && !m.writing {
 				m.tabCursor = 0
 			}
 		case key.Matches(msg, defaultWorkMap.Right):
-			if m.mainCursor == tabs && m.rightCursor == header {
+			if m.mainCursor == tabs && m.rightCursor == header && !m.writing {
 				m.tabCursor = 1
 			}
 		default:
 			if m.mainCursor == work && m.focused {
-				m.work, cmd = m.work.Update(msg)
+				_, cmd = m.work.Update(msg)
 			}
 		}
+	default:
+		m.textArea, cmd = m.textArea.Update(msg)
+	}
+
+	if m.writing {
+		m.textArea, cmd = m.textArea.Update(msg)
 	}
 
 	cmds = tea.Batch(cmds, cmd)
@@ -177,8 +206,17 @@ func (m *WorkPageModel) Update(msg tea.Msg) (*WorkPageModel, tea.Cmd) {
 func (m *WorkPageModel) View() tea.View {
 	var (
 		c *tea.Cursor
+		v tea.View
 		s string
 	)
+
+	if m.writing {
+		v = tea.NewView(m.textArea.View())
+		c = m.textArea.Cursor()
+		v.Cursor = c
+		v.AltScreen = true
+		return v
+	}
 
 	workView := m.work.View()
 	c = workView.Cursor
@@ -214,7 +252,7 @@ func (m *WorkPageModel) View() tea.View {
 
 	s = lipgloss.JoinHorizontal(lipgloss.Top, s, rightSide)
 
-	v := tea.NewView(s)
+	v = tea.NewView(s)
 	v.Cursor = c
 	v.AltScreen = true
 	return v
