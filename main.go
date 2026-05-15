@@ -22,27 +22,33 @@ var (
 	height int
 )
 
+const (
+	home int = iota
+	add
+	work
+	viewsCount
+)
+
 type model struct {
-	cursor    int
-	currViews []string
-	homeModel *views.HomeModel
-	addModel  *views.AddModel
+	cursor        int
+	homeModel     *views.HomeModel
+	addModel      *views.AddModel
+	workPageModel *views.WorkPageModel
 }
 
 func initialModel() model {
 	homeAddr := views.InitialHome(width, height)
 	addAddr := views.InitialAddModel(22, height-5)
+	workAddr := views.InitialWorkPage(width, height)
 	return model{
-		currViews: make([]string, 2),
-		homeModel: homeAddr,
-		addModel:  addAddr,
-		cursor:    0,
+		homeModel:     homeAddr,
+		addModel:      addAddr,
+		workPageModel: workAddr,
+		cursor:        home,
 	}
 }
 
 func (m *model) Init() tea.Cmd {
-	m.currViews[0] = "home"
-	m.currViews[1] = "add"
 	return nil
 }
 
@@ -66,11 +72,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		default:
-			switch m.currViews[m.cursor] {
-			case "home":
+			switch m.cursor {
+			case home:
 				_, cmd = m.homeModel.Update(msg)
-			case "add":
+			case add:
 				_, cmd = m.addModel.Update(msg)
+			case work:
+				_, cmd = m.workPageModel.Update(msg)
 			}
 			cmds = tea.Batch(cmds, cmd)
 		}
@@ -83,11 +91,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) View() tea.View {
 	var view tea.View
-	switch m.currViews[m.cursor] {
-	case "home":
+	switch m.cursor {
+	case home:
 		view = m.homeModel.View()
-	case "add":
+	case add:
 		view = m.addModel.View()
+	case work:
+		view = m.workPageModel.View()
 	}
 
 	// Send the UI for rendering

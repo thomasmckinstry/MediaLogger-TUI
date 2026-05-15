@@ -157,7 +157,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 					log.Println("homePage sending AddMsg")
 				}
 				cmds = tea.Batch(cmds, func() tea.Msg { return (ViewMsg(1)) })
-			} else {
+			} else if m.mainCursor == 0 {
 				_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)
 				cmds = tea.Batch(cmds, cmd)
 				if cmd != nil {
@@ -167,6 +167,9 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 						cmds = tea.Batch(cmds, cmd)
 					}
 				}
+			} else {
+				_, cmd = m.listModel.Update(msg)
+				cmds = tea.Batch(cmds, cmd)
 			}
 		default:
 			_, cmd = m.sidebarViews[m.sidebarCursor].Update(msg)

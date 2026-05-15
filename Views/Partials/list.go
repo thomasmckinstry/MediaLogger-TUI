@@ -10,7 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
-	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
+	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"slices"
 	"sort"
 	"strconv"
@@ -20,15 +20,17 @@ import (
 var db *sql.DB
 
 type listKeyMap struct {
-	Nav   key.Binding
-	Focus key.Binding
+	Nav     key.Binding
+	Focus   key.Binding
+	Confirm key.Binding
 }
 
 type SortMsg int
 
 var defaultListMap = listKeyMap{
-	Nav:   key.NewBinding(key.WithKeys("H", "L")),
-	Focus: key.NewBinding(key.WithKeys("esc")),
+	Nav:     key.NewBinding(key.WithKeys("H", "L")),
+	Focus:   key.NewBinding(key.WithKeys("esc")),
+	Confirm: key.NewBinding(key.WithKeys("enter")),
 }
 
 type ListModel struct {
@@ -50,7 +52,7 @@ func InitialList(width int, height int) ListModel {
 	row, err := db.Query(`SELECT title, media_type, work_status, tags, year_released FROM works;`)
 	defer func() {
 		err = row.Close()
-		utils.CheckError("Failed to close works query: ", err)
+		CheckError("Failed to close works query: ", err)
 	}()
 
 	var rows []table.Row
@@ -66,7 +68,7 @@ func InitialList(width int, height int) ListModel {
 		if err != nil {
 			log.Fatal("Failed to scan works row: ", err)
 		}
-		utils.DebugLog("Scanned row: ", []string{title, medium, tags, year, string(intStatus)})
+		DebugLog("Scanned row: ", []string{title, medium, tags, year, string(intStatus)})
 		var mediumsArr []int
 		var tagsArr []string
 		err := json.Unmarshal([]byte(medium), &mediumsArr)
@@ -77,8 +79,8 @@ func InitialList(width int, height int) ListModel {
 		if err != nil {
 			log.Fatal("Failed to Unmarshal tags: ", err)
 		}
-		mediumsStr := utils.ConvertMedium(mediumsArr)
-		rows = append(rows, table.Row{title, utils.GetTagsString(tagsArr), mediumsStr, utils.Status_itos(intStatus), year})
+		mediumsStr := ConvertMedium(mediumsArr)
+		rows = append(rows, table.Row{title, GetTagsString(tagsArr), mediumsStr, Status_itos(intStatus), year})
 	}
 
 	var columns = []table.Column{
@@ -130,24 +132,24 @@ func (m ListModel) Init() tea.Cmd {
 func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
-	case utils.NewWorkMsg:
-		utils.DebugLog("List got NewWorkMsg: ", msg)
+	case NewWorkMsg:
+		DebugLog("List got NewWorkMsg: ", msg)
 		newRow := []string(msg)
 		rows := m.table.Rows()
 		var mediumsArr []int
 		var tagsArr []string
-		err := json.Unmarshal([]byte(newRow[utils.MediumForm]), &mediumsArr)
+		err := json.Unmarshal([]byte(newRow[MediumForm]), &mediumsArr)
 		if err != nil {
-			utils.DebugLog("Medium: ", newRow[utils.MediumForm])
+			DebugLog("Medium: ", newRow[MediumForm])
 			log.Fatal("Failed to Unmarshal medium: ", err)
 		}
-		err = json.Unmarshal([]byte(newRow[utils.TagsForm]), &tagsArr)
+		err = json.Unmarshal([]byte(newRow[TagsForm]), &tagsArr)
 		if err != nil {
 			log.Fatal("Failed to Unmarshal tags: ", err)
 		}
-		intStatus, _ := strconv.Atoi(newRow[utils.StatusForm])
-		mediumsStr := utils.ConvertMedium(mediumsArr)
-		rows = append(rows, table.Row{newRow[utils.TitleForm], utils.GetTagsString(tagsArr), mediumsStr, utils.Status_itos(intStatus), newRow[utils.YearForm]})
+		intStatus, _ := strconv.Atoi(newRow[StatusForm])
+		mediumsStr := ConvertMedium(mediumsArr)
+		rows = append(rows, table.Row{newRow[TitleForm], GetTagsString(tagsArr), mediumsStr, Status_itos(intStatus), newRow[YearForm]})
 		m.table.SetRows(rows)
 	case tea.WindowSizeMsg:
 		m.style = m.style.Height(msg.Height).Width(msg.Width - 18)
@@ -175,6 +177,9 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.table.Focus()
 			}
+		case key.Matches(msg, defaultListMap.Confirm):
+			DebugLog("List got confirm", nil)
+			cmd = func() tea.Msg { return ViewMsg(2) }
 		default:
 			m.table, cmd = m.table.Update(msg)
 		}
@@ -189,13 +194,13 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		filter := [][]string(msg)
 		for _, row := range m.rows {
 			include := true
-			if row[utils.Title] != filter[utils.Title][0] && filter[utils.Title][0] != "" {
+			if row[Title] != filter[Title][0] && filter[Title][0] != "" {
 				continue
-			} else if len(filter[utils.Status]) > 0 && row[utils.Status] != filter[utils.Status][0] {
+			} else if len(filter[Status]) > 0 && row[Status] != filter[Status][0] {
 				continue
 			}
-			tags := strings.Split(row[utils.Tags], ", ")
-			for _, tag := range filter[utils.Tags] {
+			tags := strings.Split(row[Tags], ", ")
+			for _, tag := range filter[Tags] {
 				if !slices.Contains(tags, tag) {
 					include = false
 					break
@@ -204,8 +209,8 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !include {
 				continue
 			}
-			mediums := strings.Split(row[utils.Medium], ", ")
-			for _, medium := range filter[utils.Medium] {
+			mediums := strings.Split(row[Medium], ", ")
+			for _, medium := range filter[Medium] {
 				if !slices.Contains(mediums, medium) {
 					include = false
 					break

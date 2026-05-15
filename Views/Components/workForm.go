@@ -261,7 +261,7 @@ func (m *WorkFormModel) View() tea.View {
 		}
 		s += "\n"
 	}
-	enter := m.enterStyle.Render(lipgloss.PlaceHorizontal(15, lipgloss.Center, "ENTER"))
+	enter := m.enterStyle.Render(lipgloss.PlaceHorizontal(15, lipgloss.Center, "CONFIRM"))
 	enter = lipgloss.PlaceVertical(m.height-lipgloss.Height(s)-1, lipgloss.Bottom, enter)
 	s = lipgloss.JoinVertical(lipgloss.Center, s, enter)
 
