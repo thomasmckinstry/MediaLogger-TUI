@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
 	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
+	"strings"
 	"time"
 )
 
@@ -68,7 +69,7 @@ func clearComponents(m *WorkFormModel) {
 func InitialWorkFormModel(width int, height int) *WorkFormModel {
 	title := InitialTextInput(width, "Title", "{ title }", nil)
 	year := InitialTextInput(width, "Year", "{ year }", nil)
-	mediums := []string{"Movie", "Book", "Show", "Anime", "Manga", "Comic", "Animated", "Live Action"} // TODO: Query the db for this.
+	mediums := []string{"Anime", "Manga", "Movie", "Book", "Comic", "Show", "Animated", "Live Action"} // TODO: Query the db for this.
 	medium := InitialCheckbox(mediums, "Medium", width)
 	statuses := []string{"Pending", "Started", "Hiatus", "Completed", "Dropped"} // TODO: Query the db for this.
 	status := InitialArrow(statuses, "Status", width, 3)
@@ -121,6 +122,27 @@ func (m *WorkFormModel) Update(msg tea.Msg) (*WorkFormModel, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		//m.style = m.style.Height(msg.Height - (7))
 		m.height = msg.Height - 7
+	case WorkDetails:
+		details := []string(msg)
+		for i, form := range m.forms {
+			switch form := form.(type) {
+			case *TextInputModel:
+				if i == 0 {
+					form.Textinput.SetValue(details[Title])
+				} else {
+					form.Textinput.SetValue(details[Released])
+				}
+			case *TagInputModel:
+				form.Tags = strings.Split(details[Tags], ", ")
+			case *CheckboxModel:
+				for _, entry := range strings.Split(details[Medium], ", ") {
+					index := Medium_stoi(entry)
+					form.EntryVals[index] = true
+				}
+			case *ArrowModel:
+				form.OptionsCursor = Status_stoi(details[Status])
+			}
+		}
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, DefaultWorkFormKeyMap.Focus):

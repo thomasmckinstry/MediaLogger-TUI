@@ -25,17 +25,17 @@ var defaultTextMap = textKeyMap{
 }
 
 type TextInputModel struct {
-	textinput textinput.Model
+	Textinput textinput.Model
 	title     string
 	width     int
 }
 
 func (m *TextInputModel) GetContents() string {
-	return m.textinput.Value()
+	return m.Textinput.Value()
 }
 
 func (m *TextInputModel) Clear() {
-	m.textinput.Reset()
+	m.Textinput.Reset()
 }
 
 func InitialTextInput(width int, title string, placeholder string, suggestions []string) TextInputModel {
@@ -49,7 +49,7 @@ func InitialTextInput(width int, title string, placeholder string, suggestions [
 	input.SetWidth(width)
 
 	return TextInputModel{
-		textinput: input,
+		Textinput: input,
 		title:     title,
 		width:     width,
 	}
@@ -66,32 +66,32 @@ func (m *TextInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, defaultTextMap.Confirm):
-			if m.textinput.Focused() {
-				m.textinput.Blur()
+			if m.Textinput.Focused() {
+				m.Textinput.Blur()
 				break
 			}
-			m.textinput.Focus()
+			m.Textinput.Focus()
 		case key.Matches(msg, defaultTextMap.Unfocus):
-			m.textinput.Blur()
+			m.Textinput.Blur()
 		}
 	}
-	m.textinput, cmd = m.textinput.Update(msg)
+	m.Textinput, cmd = m.Textinput.Update(msg)
 	cmds = tea.Batch(cmds, cmd)
-	cmd = func() tea.Msg { return utils.NavMsg(!m.textinput.Focused()) }
+	cmd = func() tea.Msg { return utils.NavMsg(!m.Textinput.Focused()) }
 	cmds = tea.Batch(cmds, cmd)
 	return m, cmds
 }
 
 func (m *TextInputModel) View() tea.View {
 	var s string
-	var c = m.textinput.Cursor()
+	var c = m.Textinput.Cursor()
 	s = lipgloss.PlaceHorizontal(m.width, lipgloss.Center, m.title)
-	if m.textinput.Focused() {
+	if m.Textinput.Focused() {
 		c.Y += lipgloss.Height(s)
 		c.X += 1 // Aligns it correctly with the text
 	}
 
-	s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinput.View())
+	s = lipgloss.JoinVertical(lipgloss.Left, s, m.Textinput.View())
 	v := tea.NewView(s)
 	v.Cursor = c
 	return v

@@ -49,7 +49,7 @@ func (m ListModel) toggleSelected() lipgloss.Style {
 
 func InitialList(width int, height int) ListModel {
 	db = database.GetDB()
-	row, err := db.Query(`SELECT title, media_type, work_status, tags, year_released FROM works;`)
+	row, err := db.Query(`SELECT title, media_type, work_status, tags, year_released, work_id FROM works;`)
 	defer func() {
 		err = row.Close()
 		CheckError("Failed to close works query: ", err)
@@ -63,12 +63,13 @@ func InitialList(width int, height int) ListModel {
 			medium    string
 			tags      string
 			year      string
+			id        string
 		)
-		err = row.Scan(&title, &medium, &intStatus, &tags, &year)
+		err = row.Scan(&title, &medium, &intStatus, &tags, &year, &id)
 		if err != nil {
 			log.Fatal("Failed to scan works row: ", err)
 		}
-		DebugLog("Scanned row: ", []string{title, medium, tags, year, string(intStatus)})
+		DebugLog("Scanned row: ", []string{title, medium, tags, year, string(intStatus), id})
 		var mediumsArr []int
 		var tagsArr []string
 		err := json.Unmarshal([]byte(medium), &mediumsArr)
@@ -80,7 +81,7 @@ func InitialList(width int, height int) ListModel {
 			log.Fatal("Failed to Unmarshal tags: ", err)
 		}
 		mediumsStr := ConvertMedium(mediumsArr)
-		rows = append(rows, table.Row{title, GetTagsString(tagsArr), mediumsStr, Status_itos(intStatus), year})
+		rows = append(rows, table.Row{title, GetTagsString(tagsArr), mediumsStr, Status_itos(intStatus), year, id})
 	}
 
 	var columns = []table.Column{
@@ -89,6 +90,7 @@ func InitialList(width int, height int) ListModel {
 		{Title: "Medium", Width: width / 8},
 		{Title: "Status", Width: width / 8},
 		{Title: "Released", Width: width / 6},
+		{Title: "Id", Width: 0},
 	}
 
 	t := table.New(
@@ -160,6 +162,7 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			{Title: "Medium", Width: width / 8},
 			{Title: "Status", Width: width / 8},
 			{Title: "Released", Width: width / 6},
+			{Title: "Id", Width: 0},
 		})
 		m.table.Update(msg)
 	case tea.KeyMsg:
@@ -179,7 +182,7 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case key.Matches(msg, defaultListMap.Confirm):
 			DebugLog("List got confirm", nil)
-			cmd = func() tea.Msg { return ViewMsg(2) }
+			cmd = tea.Batch(func() tea.Msg { return ViewMsg(2) }, func() tea.Msg { return WorkDetails(m.table.SelectedRow()) })
 		default:
 			m.table, cmd = m.table.Update(msg)
 		}

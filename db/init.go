@@ -29,7 +29,6 @@ func init_db(db *sql.DB) {
 	CREATE TABLE IF NOT EXISTS reviews (
 	date_added date,
 	review_text text NOT NULL,
-	review_score integer NOT NULL check (review_score <= 10),
 	review_id integer PRIMARY KEY,
 	work_id integer REFERENCES works
 );

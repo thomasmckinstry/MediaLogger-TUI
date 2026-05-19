@@ -5,25 +5,41 @@ import (
 	textarea "charm.land/bubbles/v2/textarea"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"database/sql"
 	components "github.com/thomasmckinstry/MediaLogger-TUI/Views/Components"
+	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
 	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
+	"log"
+	"strconv"
+	"time"
 )
 
+type entry struct {
+	content, date string
+	id            int
+}
+
 type WorkPageModel struct {
-	work          *components.WorkFormModel
-	textArea      textarea.Model
-	focused       bool
-	writing       bool
-	width, height int
-	tabCursor     int
-	mainCursor    int
-	rightCursor   int
-	writingCursor int
-	tabStyle      lipgloss.Style
-	tabsStyle     lipgloss.Style
-	buttonStyle   lipgloss.Style
-	displayStyle  lipgloss.Style
-	detailsStyle  lipgloss.Style
+	work              *components.WorkFormModel
+	currWorkId        int
+	textArea          textarea.Model
+	notes, reviews    []entry
+	writingMode       string
+	focused           bool
+	writing           bool
+	width, height     int
+	tabCursor         int
+	mainCursor        int
+	entryCursor       int
+	rightCursor       int
+	writingCursor     int
+	displayCursor     int
+	tabStyle          lipgloss.Style
+	tabsStyle         lipgloss.Style
+	buttonStyle       lipgloss.Style
+	displayStyle      lipgloss.Style
+	entryContentStyle lipgloss.Style
+	detailsStyle      lipgloss.Style
 }
 
 type workKeyMap struct {
@@ -111,10 +127,14 @@ func InitialWorkPage(width, height int) *WorkPageModel {
 		displayStyle: lipgloss.NewStyle().
 			BorderStyle(lipgloss.DoubleBorder()).
 			PaddingRight(1).
-			Width(width - 28).
 			BorderTop(true).
 			BorderForeground(unfocused),
+		entryContentStyle: lipgloss.NewStyle().
+			MarginRight(1),
 	}
+}
+
+func (m *WorkPageModel) SetWork(workDetails []string) {
 }
 
 func (m *WorkPageModel) Init() tea.Cmd {
@@ -129,6 +149,44 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		_, cmd = m.work.Update(msg)
+		m.width = msg.Width
+		m.height = msg.Height
+	case WorkDetails:
+		m.notes = []entry{}
+		m.reviews = []entry{}
+		_, cmd = m.work.Update(msg)
+		DebugLog("WorkDetails: ", msg)
+		db := database.GetDB()
+		id, err := strconv.Atoi(msg[len(msg)-1])
+		m.currWorkId = id
+		row, err := db.Query(`SELECT date_added, review_text, review_id FROM reviews WHERE work_id = ?;`, id)
+		for row.Next() {
+			var (
+				content, date string
+				id            int
+			)
+			err = row.Scan(&date, &content, &id)
+			if err != nil {
+				log.Fatal("Failed to scan works row: ", err)
+			}
+			m.reviews = append(m.reviews, entry{content: content, date: date, id: id})
+		}
+		row, err = db.Query(`SELECT date_added, note_text, note_id FROM notes WHERE work_id = ?;`, id)
+		DebugLog("Querying notes", id)
+		for row.Next() {
+			var (
+				content, date string
+				id            int
+			)
+			err = row.Scan(&date, &content, &id)
+			DebugLog("Scanned note: ", content)
+			if err != nil {
+				log.Fatal("Failed to scan works row: ", err)
+			}
+			m.notes = append(m.notes, entry{content: content, date: date, id: id})
+		}
+		err = row.Close()
+		CheckError("Failed to close works query: ", err)
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, defaultWorkMap.Confirm):
@@ -136,11 +194,57 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focused = true
 			} else if m.mainCursor == add && m.rightCursor == header && !m.writing {
 				m.writing = true
+				m.writingMode = "ADD"
 				return m, cmds
 			} else if m.writing && m.writingCursor == 0 && !m.textArea.Focused() {
 				m.textArea.Focus()
 				return m, cmd
-			} else {
+			} else if m.writing && m.writingCursor == 1 {
+				content := m.textArea.Value()
+				db := database.GetDB()
+				m.writing = false
+				var (
+					query *sql.Stmt
+					err   error
+				)
+				date := time.Now().Format(time.DateOnly)
+				if m.writingMode == "ADD" {
+					if m.tabCursor == 0 {
+						query, err = db.Prepare(`INSERT INTO notes (date_added, note_text, work_id) VALUES (?, ?, ?)`)
+						m.notes = append(m.notes, entry{content: content, date: date})
+					} else {
+						query, err = db.Prepare(`INSERT INTO reviews (date_added, review_text, work_id) VALUES  (?, ?, ?)`)
+						m.reviews = append(m.reviews, entry{content: content, date: date})
+					}
+				} else {
+					if m.tabCursor == 0 {
+						query, err = db.Prepare(`REPLACE INTO notes (date_added, note_text, work_id, review_id) VALUES (?, ?, ?, ?)`)
+						m.notes[m.entryCursor] = entry{content: content, date: date, id: m.notes[m.entryCursor].id}
+					} else {
+						query, err = db.Prepare(`REPLACE INTO reviews (date_added, review_text, work_id, review_id) VALUES (?, ?, ?, ?)`)
+						m.reviews[m.entryCursor] = entry{content: content, date: date, id: m.reviews[m.entryCursor].id}
+					}
+
+				}
+				CheckError("Failed to prepare statement to insert to DB: ", err)
+				if m.writingMode == "ADD" {
+					query.Exec(date, content, m.currWorkId)
+				} else {
+					query.Exec(date, content, m.currWorkId, m.reviews[m.entryCursor].id)
+				}
+				query.Close()
+				m.textArea.Reset()
+				m.writingCursor = 0
+
+			} else if m.rightCursor == 1 {
+				m.writing = true
+				m.writingMode = "EDIT"
+				if m.tabCursor == 0 {
+					m.textArea.SetValue(m.notes[m.entryCursor].content)
+				} else {
+					m.textArea.SetValue(m.reviews[m.entryCursor].content)
+				}
+			} else if m.mainCursor == work {
 				m.work, cmd = m.work.Update(msg)
 			}
 			cmds = tea.Batch(cmds, cmd)
@@ -157,6 +261,7 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.textArea.Blur()
 				} else {
 					m.writing = false
+					m.writingCursor = 0
 					m.textArea.Reset()
 				}
 			} else {
@@ -231,7 +336,7 @@ func (m *WorkPageModel) View() tea.View {
 	)
 
 	if m.writing {
-		writingHeader := "NEW " + writeHeader[m.tabCursor]
+		writingHeader := m.writingMode + " " + writeHeader[m.tabCursor]
 		textarea := renderFocused(m.tabsStyle, m.textArea.View(), m.writingCursor == 0)
 		button := renderFocused(m.buttonStyle, "CONFIRM", m.writingCursor == 1)
 
@@ -277,7 +382,16 @@ func (m *WorkPageModel) View() tea.View {
 
 	headerContent = lipgloss.JoinHorizontal(lipgloss.Top, tabsContent, headerContent)
 
-	displayContent := ""
+	var displayContent string
+	var entry entry
+	if m.tabCursor == 0 && len(m.notes) > 0 {
+		entry = m.notes[m.entryCursor]
+	} else if len(m.reviews) > 0 {
+		entry = m.reviews[m.entryCursor]
+	}
+	displayContent = lipgloss.JoinVertical(lipgloss.Right, entry.date, m.buttonStyle.Render("EDIT"), m.buttonStyle.Render("DELETE"))
+	content := lipgloss.PlaceHorizontal(m.width-(lipgloss.Width(displayContent)+31), lipgloss.Left, m.entryContentStyle.Width(m.width-(lipgloss.Width(displayContent)+31)).Render(entry.content))
+	displayContent = lipgloss.JoinHorizontal(lipgloss.Top, content, displayContent)
 	isFocused = m.mainCursor > work && m.rightCursor == display
 	displayContent = renderFocused(m.displayStyle, displayContent, isFocused)
 

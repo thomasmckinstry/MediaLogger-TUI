@@ -14,7 +14,7 @@ import (
 type CheckboxModel struct {
 	cursor    int
 	entries   []string
-	entryVals []bool
+	EntryVals []bool
 	Title     string
 	selected  bool
 	width     int
@@ -49,12 +49,12 @@ var defaultCheckboxMap = checkboxKeyMap{
 }
 
 func (m *CheckboxModel) Clear() {
-	m.entryVals = make([]bool, len(m.entries))
+	m.EntryVals = make([]bool, len(m.entries))
 }
 
 func (m *CheckboxModel) GetContents() []string {
 	var contents []string
-	for i, entry := range m.entryVals {
+	for i, entry := range m.EntryVals {
 		if entry {
 			contents = append(contents, m.entries[i])
 		}
@@ -68,7 +68,7 @@ func InitialCheckbox(entries []string, title string, width int) CheckboxModel {
 		entries:   entries,
 		width:     width,
 		Title:     title,
-		entryVals: make([]bool, len(entries)),
+		EntryVals: make([]bool, len(entries)),
 		entryStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#D17600")),
 	}
@@ -93,7 +93,7 @@ func (m *CheckboxModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.selected {
 				m.selected = true
 			} else {
-				m.entryVals[m.cursor] = !m.entryVals[m.cursor]
+				m.EntryVals[m.cursor] = !m.EntryVals[m.cursor]
 			}
 		case key.Matches(msg, defaultCheckboxMap.Down): // Nav between tags
 			if m.cursor < len(m.entries)-1 && m.selected {
@@ -117,7 +117,7 @@ func (m *CheckboxModel) View() tea.View {
 	for i, medium := range m.entries {
 		var entry string
 		check := " "
-		if m.entryVals[i] {
+		if m.EntryVals[i] {
 			check = "x"
 		}
 		entry = lipgloss.PlaceHorizontal(m.width-2, lipgloss.Center, medium)

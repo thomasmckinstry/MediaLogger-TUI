@@ -19,7 +19,7 @@ func GetDB() *sql.DB {
 	var err error
 
 	if db != nil {
-		utils.DebugLog("Database already exists", nil)
+		//utils.DebugLog("Database already exists", nil)
 		return db
 	}
 
