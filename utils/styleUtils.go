@@ -9,6 +9,14 @@ var (
 	Focused   = lipgloss.Color("#D17600")
 )
 
+var (
+	ButtonStyle lipgloss.Style = lipgloss.NewStyle().
+		PaddingLeft(2).
+		PaddingRight(2).
+		BorderStyle(lipgloss.DoubleBorder()).
+		BorderForeground(Unfocused)
+)
+
 func RenderFocused(style lipgloss.Style, content string, isFocused bool) string {
 	if isFocused {
 		return style.BorderForeground(Focused).Render(content)

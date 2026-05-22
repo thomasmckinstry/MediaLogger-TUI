@@ -200,6 +200,7 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				log.Fatal("Failed to scan works row: ", err)
 			}
 			m.notes = append(m.notes, entry{content: content, date: date, id: id})
+			DebugLog("Read note: ", entry{content: content, date: date, id: id})
 		}
 		err = row.Close()
 		CheckError("Failed to close works query: ", err)
@@ -244,7 +245,9 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				CheckError("Failed to prepare statement to insert to DB: ", err)
 				if m.writingMode == "ADD" {
-					query.Exec(date, content, m.currWorkId)
+					DebugLog("Writing to entry to db for work: ", content)
+					_, err = query.Exec(date, content, m.currWorkId)
+					CheckError("Failed to insert new entry to db: ", err)
 				} else {
 					switch m.tabCursor {
 					case note:
@@ -256,32 +259,35 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				query.Close()
 				m.textArea.Reset()
 				m.writingCursor = 0
-
 			} else if m.rightCursor == display && m.mainCursor != work && m.entryCursor == 1 {
 				db := database.GetDB()
 				var (
-					query *sql.Stmt
-					index int
-					err   error
+					query     *sql.Stmt
+					index, id int
+					err       error
 				)
 				switch m.tabCursor {
 				case note:
 					query, err = db.Prepare("DELETE FROM notes WHERE note_id = ?")
 					index = m.notesCursor
-					m.notes = append(m.notes[:index], m.notes[:index+1]...)
+					id = m.notes[m.notesCursor].id
+					DebugLog("Deleting note: ", id)
+					m.notes = append(m.notes[:index], m.notes[index+1:]...)
 					if m.notesCursor > 0 {
 						m.notesCursor--
 					}
 				case review:
 					query, err = db.Prepare("DELETE FROM reviews WHERE review_id = ?")
 					index = m.reviewsCursor
-					m.reviews = append(m.reviews[:index], m.reviews[:index+1]...)
+					id = m.reviews[m.reviewsCursor].id
+					m.reviews = append(m.reviews[:index], m.reviews[index+1:]...)
 					if m.reviewsCursor > 0 {
 						m.reviewsCursor--
 					}
 				}
 				CheckError("Failed to prep delete entry query: ", err)
-				_, err = query.Exec(index)
+				_, err = query.Exec(id)
+				CheckError("Failed to delete entry: ", err)
 			} else if m.rightCursor == display && m.mainCursor != work && m.entryCursor == 0 {
 				m.writing = true
 				m.writingMode = "EDIT"
@@ -291,15 +297,31 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.textArea.SetValue(m.reviews[m.entryCursor].content)
 				}
 			} else if m.rightCursor != display && m.mainCursor == del {
-				DebugLog("Deleting work: ", m.currWorkId)
-				db := database.GetDB()
-				query, err := db.Prepare(`DELETE FROM works WHERE work_id = ?`)
-				CheckError("Failed to prepare delete work query: ", err)
-				_, err = query.Exec(m.currWorkId)
-				CheckError("Failed to delete work from db: ", err)
-				m.resetCursors()
-				cmds = tea.Batch(cmds, func() tea.Msg { return ViewMsg(0) })
-				cmds = tea.Batch(cmds, func() tea.Msg { return DeleteWorkMsg(m.currWorkId) })
+				cmd = func() tea.Msg {
+					return ConfirmationMsg{
+						Function: func() tea.Cmd {
+							var cmds tea.Cmd
+							DebugLog("Deleting work: ", m.currWorkId)
+							db := database.GetDB()
+							query, err := db.Prepare(`DELETE FROM works WHERE work_id = ?`)
+							CheckError("Failed to prepare delete work query: ", err)
+							_, err = query.Exec(m.currWorkId)
+							CheckError("Failed to delete work from db: ", err)
+							query, err = db.Prepare(`DELETE FROM notes WHERE work_id = ?`)
+							CheckError("Failed to prepare delete notes query: ", err)
+							_, err = query.Exec(m.currWorkId)
+							CheckError("Failed to delete notes from db: ", err)
+							query, err = db.Prepare(`DELETE FROM reviews WHERE work_id = ?`)
+							CheckError("Failed to prepare delete reviews query: ", err)
+							_, err = query.Exec(m.currWorkId)
+							CheckError("Failed to delete reviews from db: ", err)
+							m.resetCursors()
+							cmds = tea.Batch(cmds, func() tea.Msg { return DeleteWorkMsg(m.currWorkId) })
+							return cmds
+						},
+						Msg: lipgloss.Sprintf("Delete work %d?", m.currWorkId),
+					}
+				}
 			} else if m.mainCursor == work {
 				m.work, cmd = m.work.Update(msg)
 				var ok bool

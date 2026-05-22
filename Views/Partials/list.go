@@ -191,8 +191,12 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.table.Focus()
 			}
 		case key.Matches(msg, defaultListMap.Confirm):
-			DebugLog("List got confirm", nil)
-			cmd = tea.Batch(func() tea.Msg { return ViewMsg(2) }, func() tea.Msg { return WorkDetails(m.table.SelectedRow()) })
+			currWork := WorkDetails(m.table.SelectedRow())
+			DebugLog("Viewing: ", currWork)
+			if len(currWork) > 0 {
+				cmd = func() tea.Msg { return ViewMsg(2) }
+				cmd = tea.Batch(cmd, func() tea.Msg { return WorkDetails(m.table.SelectedRow()) })
+			}
 		default:
 			m.table, cmd = m.table.Update(msg)
 		}

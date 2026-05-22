@@ -26,6 +26,7 @@ const (
 	home int = iota
 	add
 	work
+	confirm
 	viewsCount
 )
 
@@ -34,13 +35,16 @@ type model struct {
 	homeModel     *views.HomeModel
 	addModel      *views.AddModel
 	workPageModel *views.WorkPageModel
+	confirmModel  *views.ConfirmModel
 }
 
 func initialModel() model {
 	homeAddr := views.InitialHome(width, height)
 	addAddr := views.InitialAddModel(width, height)
 	workAddr := views.InitialWorkPage(width, height)
+	confirmAddr := views.InitialConfirmModel(width, height)
 	return model{
+		confirmModel:  confirmAddr,
 		homeModel:     homeAddr,
 		addModel:      addAddr,
 		workPageModel: workAddr,
@@ -56,6 +60,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+	case ConfirmationMsg:
+		DebugLog("Got confirm msg: ", msg)
+		m.cursor = ConfirmPage
+		_, cmd = m.confirmModel.Update(msg)
 	case DeleteWorkMsg:
 		_, cmd = m.homeModel.Update(msg)
 	case NewWorkMsg:
@@ -63,9 +71,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case WorkDetails:
 		_, cmd = m.workPageModel.Update(msg)
 	case ViewMsg:
-		if len(os.Getenv("DEBUG")) > 0 {
-			log.Println("main received ViewMsg for ", int(msg))
-		}
+		DebugLog("Main got ViewMsg: ", msg)
 		m.addModel, _ = m.addModel.Update(msg)
 		m.cursor = int(msg)
 	case tea.WindowSizeMsg:
@@ -91,13 +97,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				_, cmd = m.addModel.Update(msg)
 			case work:
 				_, cmd = m.workPageModel.Update(msg)
+			case confirm:
+				_, cmd = m.confirmModel.Update(msg)
 			}
 			cmds = tea.Batch(cmds, cmd)
 		}
 	}
 
-	// Return the updated model to the Bubble Tea runtime for processing.
-	// Note that we're not returning a command.
 	return m, cmds
 }
 
@@ -110,6 +116,8 @@ func (m *model) View() tea.View {
 		view = m.addModel.View()
 	case work:
 		view = m.workPageModel.View()
+	case confirm:
+		view = m.confirmModel.View()
 	}
 
 	// Send the UI for rendering

@@ -1,6 +1,9 @@
 package utils
 
-import "strings"
+import (
+	"charm.land/bubbletea/v2"
+	"strings"
+)
 
 type NavMsg bool
 
@@ -9,6 +12,11 @@ type DeleteWorkMsg int
 type NewWorkMsg []string
 
 type ViewMsg int
+
+type ConfirmationMsg struct {
+	Function func() tea.Cmd
+	Msg      string
+}
 
 type WorkDetails []string
 
@@ -19,6 +27,14 @@ const (
 	Hiatus
 	Completed
 	Dropped
+)
+
+const (
+	HomePage int = iota
+	AddPage
+	WorkPage
+	ConfirmPage
+	PageCount
 )
 
 const ( // Order that the forms are in

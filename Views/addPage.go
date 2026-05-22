@@ -58,14 +58,17 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 			db := database.GetDB()
 			date := time.Now().Format(time.UnixDate)
 
+			var id int64
 			query, err := db.Prepare(`
 					INSERT OR REPLACE INTO works (date_added, title, media_type, work_status, tags, year_released)
 					VALUES (?, ?, ?, ?, ?, ?)
+					RETURNING work_id
 				`)
 			CheckError("Failed to prepare insert statement: ", err)
 			statusInt := int(workMsg[StatusForm][0])
 			CheckError("Failed to convert string to int: ", err)
-			_, err = query.Exec(date, workMsg[TitleForm], workMsg[MediumForm], statusInt, workMsg[TagsForm], workMsg[YearForm])
+			row, err := query.Exec(date, workMsg[TitleForm], workMsg[MediumForm], statusInt, workMsg[TagsForm], workMsg[YearForm])
+			id, err = row.LastInsertId()
 			CheckError("Failed to insert to works table: ", err)
 			err = query.Close()
 
@@ -81,7 +84,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 
 			CheckError("Failed to close insert to works table: ", err)
 			cmds = tea.Batch(cmds, func() tea.Msg { return ViewMsg(0) })
-
+			cmds = tea.Batch(cmds, func() tea.Msg { return append(workMsg, string(id)) })
 		}
 		cmds = tea.Batch(cmds, cmd)
 	}
