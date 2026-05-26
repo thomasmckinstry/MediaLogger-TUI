@@ -2,6 +2,19 @@
 
 This project is making a terminal user interface for a user to track movies, shows, and other media they have on their watchlist. It'll allow users to keep track of the status of a given work (Completed, Pending, etc.) as well as taking notes and writing reviews on works.
 
+## Features:
+
+## Installation:
+### Building from source:
+
+## Usage:
+
+## Technologies:
+
+## Issues and Requests:
+
+## About:
+
 # Architecture
 ## Packages:
 ### Bubbletea:
