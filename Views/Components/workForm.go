@@ -251,7 +251,7 @@ func (m *WorkFormModel) View() tea.View {
 	}
 	isFocused := m.cursor == EnterForm
 	enter := RenderFocused(m.enterStyle, "CONFIRM", isFocused)
-	enter = lipgloss.PlaceVertical(m.height-lipgloss.Height(s)-1, lipgloss.Bottom, enter)
+	enter = lipgloss.PlaceVertical(m.height-lipgloss.Height(s)-2, lipgloss.Bottom, enter)
 	s = lipgloss.JoinVertical(lipgloss.Center, s, enter)
 
 	v := tea.NewView(s)

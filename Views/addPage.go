@@ -97,14 +97,17 @@ func (m *AddModel) View() tea.View {
 
 	formView := m.form.View()
 	c = formView.Cursor
-	if c != nil {
-		c.Y += 1
-		c.X += 2
-	}
 
 	s = m.style.Render(formView.Content)
+
+	if c != nil {
+		c.Y += 1
+		c.X += (m.width / 2) - (lipgloss.Width(s) / 2) + 2
+	}
+
 	s = lipgloss.PlaceHorizontal(m.width, lipgloss.Center, s)
 	s = lipgloss.PlaceVertical(m.height, lipgloss.Center, s)
+
 	v := tea.NewView(s)
 	v.Cursor = c
 	v.AltScreen = true
