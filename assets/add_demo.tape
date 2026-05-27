@@ -27,13 +27,13 @@ Enter
 Type "Crime"
 Sleep 250ms
 Enter
-Escape 2
+Escape
+Escape
 Down
 Enter
-Down 2
 Enter
 Sleep 250ms
-Down 5 Enter
+Down 7 Enter
 Sleep 250ms
 Escape Down
 Right 3
