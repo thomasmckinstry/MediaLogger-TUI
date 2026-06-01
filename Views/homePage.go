@@ -165,7 +165,7 @@ func (m *HomeModel) Update(msg tea.Msg) (*HomeModel, tea.Cmd) {
 				cmds = tea.Batch(cmds, cmd)
 			}
 		case key.Matches(msg, defaultHomeKeyMap.Confirm):
-			if m.sidebarCursor == add && m.mainCursor == sidebar {
+			if m.sidebarCursor == addBtn && m.mainCursor == sidebar {
 				if len(os.Getenv("DEBUG")) > 0 {
 					log.Println("homePage sending AddMsg")
 				}

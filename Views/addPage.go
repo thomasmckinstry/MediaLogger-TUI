@@ -3,7 +3,7 @@ package views
 import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/thomasmckinstry/MediaLogger-TUI/Views/Components"
+	"github.com/thomasmckinstry/MediaLogger-TUI/Views/Partials"
 	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
 	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"time"
@@ -16,12 +16,12 @@ var addStyle lipgloss.Style = lipgloss.NewStyle().
 	BorderStyle(lipgloss.DoubleBorder())
 
 type AddModel struct {
-	form          *components.WorkFormModel
+	form          *partials.WorkFormModel
 	width, height int
 }
 
 func InitialAddModel(width, height int) *AddModel {
-	form := components.InitialWorkFormModel(25, height)
+	form := partials.InitialWorkFormModel(25, height)
 	return &AddModel{
 		width:  width,
 		height: height,

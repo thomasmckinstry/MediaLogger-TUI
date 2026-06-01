@@ -1,12 +1,14 @@
-package components
+package partials
 
 import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"encoding/json"
+	"github.com/thomasmckinstry/MediaLogger-TUI/Views/Components"
 	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
 	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
+	"strconv"
 	"strings"
 )
 
@@ -36,41 +38,42 @@ var DefaultWorkFormKeyMap = WorkFormMap{
 	),
 }
 
+var errorStyle lipgloss.Style = lipgloss.NewStyle().Foreground(lipgloss.Red)
+
 type WorkValuesMsg []string
 
 type WorkFormModel struct {
-	headerText     string
-	focused        bool
-	cursor         int
-	height         int
-	width          int
-	forms          []tea.Model
-	headerStyle    lipgloss.Style
-	textinputStyle lipgloss.Style
-	enterStyle     lipgloss.Style
+	headerText string
+	errorMsg   string
+	focused    bool
+	cursor     int
+	height     int
+	width      int
+	forms      []tea.Model
 }
 
 func (m *WorkFormModel) ClearComponents() {
 	m.cursor = 0
+	m.errorMsg = ""
 	for _, form := range m.forms {
 		switch form := form.(type) {
-		case *TextInputModel:
+		case *components.TextInputModel:
 			form.Clear()
-		case *CheckboxModel:
+		case *components.CheckboxModel:
 			form.Clear()
-		case *TagInputModel:
+		case *components.TagInputModel:
 			form.Clear()
 		}
 	}
 }
 
 func InitialWorkFormModel(width int, height int) *WorkFormModel {
-	title := InitialTextInput(width, "Title", "{ title }", nil)
-	year := InitialTextInput(width, "Year", "{ year }", nil)
+	title := components.InitialTextInput(width, "Title", "{ title }", nil)
+	year := components.InitialTextInput(width, "Year", "{ year }", nil)
 	mediums := []string{"Movie", "Book", "Comic", "Show", "Animated", "Live Action"} // TODO: Query the db for this.
-	medium := InitialCheckbox(mediums, "Medium", width)
+	medium := components.InitialCheckbox(mediums, "Medium", width)
 	statuses := []string{"Pending", "Started", "Hiatus", "Completed", "Dropped"} // TODO: Query the db for this.
-	status := InitialArrow(statuses, "Status", width, 3)
+	status := components.InitialArrow(statuses, "Status", width, 3)
 
 	var tagSuggestions []string
 	db := database.GetDB()
@@ -85,7 +88,7 @@ func InitialWorkFormModel(width int, height int) *WorkFormModel {
 	err = rows.Close()
 	CheckError("Failed to close tags query: ", err)
 
-	tags := InitialInput(20, "{ tags }", "Tags", width-1, false, tagSuggestions)
+	tags := components.InitialInput(20, "{ tags }", "Tags", width-1, false, tagSuggestions)
 	forms := []tea.Model{&title, &year, &tags, &medium, &status}
 	return &WorkFormModel{
 		headerText: "Add Work:",
@@ -94,17 +97,6 @@ func InitialWorkFormModel(width int, height int) *WorkFormModel {
 		cursor:     0,
 		height:     height,
 		width:      24,
-		headerStyle: lipgloss.NewStyle().
-			Align(lipgloss.Center).
-			Width(width + 2),
-		textinputStyle: lipgloss.NewStyle().
-			Width(width + 3).
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("#6E3F00")).
-			BorderLeft(true),
-		enterStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.DoubleBorder()).
-			BorderForeground(Unfocused),
 	}
 }
 
@@ -123,20 +115,20 @@ func (m *WorkFormModel) Update(msg tea.Msg) (*WorkFormModel, tea.Cmd) {
 		details := []string(msg)
 		for i, form := range m.forms {
 			switch form := form.(type) {
-			case *TextInputModel:
+			case *components.TextInputModel:
 				if i == 0 {
 					form.Textinput.SetValue(details[Title])
 				} else {
 					form.Textinput.SetValue(details[Released])
 				}
-			case *TagInputModel:
+			case *components.TagInputModel:
 				form.Tags = strings.Split(details[Tags], ", ")
-			case *CheckboxModel:
+			case *components.CheckboxModel:
 				for _, entry := range strings.Split(details[Medium], ", ") {
 					index := Medium_stoi(entry)
 					form.EntryVals[index] = true
 				}
-			case *ArrowModel:
+			case *components.ArrowModel:
 				form.OptionsCursor = Status_stoi(details[Status])
 			}
 		}
@@ -149,34 +141,51 @@ func (m *WorkFormModel) Update(msg tea.Msg) (*WorkFormModel, tea.Cmd) {
 					content  string
 					tags     []string
 					err      error
+					valid    bool
 				)
 
 				// PREPPING DATA FOR ENTRY TO DB
-				for _, form := range m.forms {
+				for i, form := range m.forms {
 					switch form := form.(type) {
-					case *TextInputModel:
+					case *components.TextInputModel:
 						content = string(form.GetContents())
-					case *TagInputModel:
+						if i == YearForm {
+							_, err = strconv.Atoi(content)
+							if err != nil {
+								valid = false
+								m.errorMsg = "Invalid input for Year."
+								err = nil
+							}
+						}
+					case *components.TagInputModel:
 						tags = form.GetContents()
 						marshaledContent, err := json.Marshal(tags)
 						CheckError("Failed to marshal input data to JSON: ", err)
 						content = string(marshaledContent)
-					case *CheckboxModel:
+					case *components.CheckboxModel:
 						entries := form.GetContents()
 						var convertedContents []int
+						if len(entries) == 0 {
+							valid = false
+							m.errorMsg = "Invalid input for Medium."
+							err = nil
+							break
+						}
 						for _, entry := range entries {
 							convertedContents = append(convertedContents, Medium_stoi(entry))
 						}
 						marshaledContent, err := json.Marshal(convertedContents)
 						CheckError("Failed to marshal input data to JSON: ", err)
 						content = string(marshaledContent)
-					case *ArrowModel:
+					case *components.ArrowModel:
 						content = string(Status_stoi(form.GetContents()))
 					}
 					CheckError("Failed to marshal input data to JSON: ", err)
 					contents = append(contents, string(content))
 				}
-				cmds = tea.Batch(cmds, func() tea.Msg { return NewWorkMsg(contents) })
+				if valid {
+					cmds = tea.Batch(cmds, func() tea.Msg { return NewWorkMsg(contents) })
+				}
 				break
 			}
 			_, cmd = m.forms[m.cursor].Update(msg)
@@ -243,14 +252,17 @@ func (m *WorkFormModel) View() tea.View {
 			c.Y += lipgloss.Height(s)
 		}
 		if i == m.cursor {
-			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))
+			s = lipgloss.JoinVertical(lipgloss.Left, s, textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))
 		} else {
-			s = lipgloss.JoinVertical(lipgloss.Left, s, m.textinputStyle.Render(formView.Content))
+			s = lipgloss.JoinVertical(lipgloss.Left, s, textinputStyle.Render(formView.Content))
 		}
 		s += "\n"
 	}
 	isFocused := m.cursor == EnterForm
-	enter := RenderFocused(m.enterStyle, "CONFIRM", isFocused)
+	enter := RenderFocused(enterStyle, "CONFIRM", isFocused)
+	if m.errorMsg != "" {
+		enter = lipgloss.JoinVertical(lipgloss.Center, errorStyle.Render(m.errorMsg), enter)
+	}
 	enter = lipgloss.PlaceVertical(m.height-lipgloss.Height(s)-2, lipgloss.Bottom, enter)
 	s = lipgloss.JoinVertical(lipgloss.Center, s, enter)
 

@@ -163,7 +163,7 @@ func (m *TagInputModel) View() tea.View {
 	s = lipgloss.PlaceHorizontal(m.width, lipgloss.Center, m.title)
 	if m.textInput.Focused() {
 		c.Y += lipgloss.Height(s)
-		c.X += 1 // Aligns it correctly with the text
+		//c.X += 1 // Aligns it correctly with the text
 	}
 
 	s = lipgloss.JoinVertical(lipgloss.Left, s, m.textInput.View())

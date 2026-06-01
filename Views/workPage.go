@@ -6,7 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"database/sql"
-	components "github.com/thomasmckinstry/MediaLogger-TUI/Views/Components"
+	"github.com/thomasmckinstry/MediaLogger-TUI/Views/Partials"
 	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
 	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"log"
@@ -53,7 +53,7 @@ type entry struct {
 }
 
 type WorkPageModel struct {
-	work           *components.WorkFormModel
+	work           *partials.WorkFormModel
 	currWorkId     int
 	textArea       textarea.Model
 	notes, reviews []entry
@@ -129,7 +129,7 @@ func (m *WorkPageModel) resetCursors() {
 }
 
 func InitialWorkPage(width, height int) *WorkPageModel {
-	workForm := components.InitialWorkFormModel(22, height)
+	workForm := partials.InitialWorkFormModel(22, height)
 
 	ti := textarea.New()
 	ti.SetWidth(width - 1)
