@@ -145,6 +145,7 @@ func (m *WorkFormModel) Update(msg tea.Msg) (*WorkFormModel, tea.Cmd) {
 				)
 
 				// PREPPING DATA FOR ENTRY TO DB
+				valid = true
 				for i, form := range m.forms {
 					switch form := form.(type) {
 					case *components.TextInputModel:
@@ -183,6 +184,7 @@ func (m *WorkFormModel) Update(msg tea.Msg) (*WorkFormModel, tea.Cmd) {
 					CheckError("Failed to marshal input data to JSON: ", err)
 					contents = append(contents, string(content))
 				}
+				DebugLog("workForm add valid? ", valid)
 				if valid {
 					cmds = tea.Batch(cmds, func() tea.Msg { return NewWorkMsg(contents) })
 				}
