@@ -89,12 +89,12 @@ func InitialList(width int, height int) ListModel {
 	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("#6E3F00")).
+		BorderForeground(Unfocused).
 		BorderBottom(true).
 		Bold(false)
 	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("#D17600")).
+		Foreground(lipgloss.Color("#FFFFFF")).
+		Background(Focused).
 		Bold(false)
 	t.SetStyles(s)
 

@@ -125,8 +125,11 @@ func (m *WorkFormModel) Update(msg tea.Msg) (*WorkFormModel, tea.Cmd) {
 				form.Tags = strings.Split(details[Tags], ", ")
 			case *components.CheckboxModel:
 				for _, entry := range strings.Split(details[Medium], ", ") {
-					index := Medium_stoi(entry)
-					form.EntryVals[index] = true
+					for i, formEntry := range form.Entries {
+						if entry == formEntry {
+							form.EntryVals[i] = true
+						}
+					}
 				}
 			case *components.ArrowModel:
 				form.OptionsCursor = Status_stoi(details[Status])
@@ -253,11 +256,7 @@ func (m *WorkFormModel) View() tea.View {
 			c = formView.Cursor
 			c.Y += lipgloss.Height(s)
 		}
-		if i == m.cursor {
-			s = lipgloss.JoinVertical(lipgloss.Left, s, textinputStyle.BorderForeground(lipgloss.Color("#D17600")).Render(formView.Content))
-		} else {
-			s = lipgloss.JoinVertical(lipgloss.Left, s, textinputStyle.Render(formView.Content))
-		}
+		s = lipgloss.JoinVertical(lipgloss.Left, s, RenderFocused(textinputStyle, formView.Content, i == m.cursor))
 		s += "\n"
 	}
 	isFocused := m.cursor == EnterForm
