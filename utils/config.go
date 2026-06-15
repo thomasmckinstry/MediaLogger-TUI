@@ -1,15 +1,18 @@
 package utils
 
 import (
+	"errors"
 	"gopkg.in/yaml.v3"
 	"os"
 )
 
+type theme struct {
+	Focus   string `yaml:"Focus"`
+	Unfocus string `yaml:"Unfocus"`
+}
+
 type ConfigModel struct {
-	Theme struct {
-		Focus   string `yaml:"Focus"`
-		Unfocus string `yaml:"Unfocus"`
-	} `yaml:"Theme"`
+	Theme theme `yaml:"Theme"`
 
 	Database string `yaml:"Database"`
 
@@ -17,11 +20,24 @@ type ConfigModel struct {
 	StatusOptions []string `yaml:"StatusOptions"`
 }
 
-var Config ConfigModel
+// Starts with default values. Overwritten if a config file exists.
+var Config ConfigModel = ConfigModel{
+	Theme: theme{
+		Focus:   "#D17600",
+		Unfocus: "#6E3F00",
+	},
+
+	Database: "media.db",
+
+	MediaOptions:  []string{"Movie", "Book", "TV Show"},
+	StatusOptions: []string{"Pending", "Started", "Completed"},
+}
 
 func ReadConfig(filepath string) {
 	file, err := os.ReadFile(filepath)
-	CheckError("Failed to read config: ", err)
+	if !errors.Is(err, os.ErrNotExist) {
+		CheckError("Failed to read config: ", err)
+	}
 
 	err = yaml.Unmarshal(file, &Config)
 	CheckError("Failed to unmarshal config: ", err)

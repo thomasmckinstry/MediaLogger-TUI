@@ -1,4 +1,4 @@
-# MediaLogger TUI
+# OEUVRE:
 
 This project is a Terminal User Interface to track movies, shows, and other media (Referred to as "works") that the user wants to read/watch/etc.
 
@@ -32,6 +32,27 @@ enter: Focus a component/Confirm an input
 H/J/K/L: Navigate "Top Level Components" on Home Page
 h/j/k/l: Navigate within components
 up/down/left/right: Navigate within components
+```
+
+### Config:
+The program expects a yaml file named "config.yaml". Below is an example config with defaults.
+
+```
+Theme:
+    Focus: "#D17600"
+    Unfocus: "#6E3F00"
+
+Database: "media.db"
+
+MediaOptions:
+    - "Movie"
+    - "Book"
+    - "TV Show"
+
+StatusOptions:
+    - "Pending"
+    - "Started"
+    - "Completed"
 ```
 
 ## Technologies:
