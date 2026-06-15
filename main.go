@@ -14,7 +14,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/thomasmckinstry/MediaLogger-TUI/Views"
-	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
+	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
 	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"golang.org/x/term"
 )
@@ -146,7 +146,14 @@ func main() {
 		}()
 	}
 
-	utils.ReadConfig("config.yaml")
+	ReadConfig("config.yaml")
+
+	database.SetStatuses(Config.StatusOptions)
+	database.SetMediums(Config.MediaOptions)
+
+	db := database.GetDB()
+	SetupMediums(db)
+	SetupStatuses(db)
 
 	mainModel := initialModel()
 	program := tea.NewProgram(&mainModel)

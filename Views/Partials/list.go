@@ -57,19 +57,13 @@ func InitialList(width int, height int) ListModel {
 			id        string
 		)
 		err = row.Scan(&title, &medium, &intStatus, &tags, &year, &id)
-		if err != nil {
-			log.Fatal("Failed to scan works row: ", err)
-		}
+		CheckError("Failed to scan works row: ", err)
 		var mediumsArr []int
 		var tagsArr []string
 		err := json.Unmarshal([]byte(medium), &mediumsArr)
-		if err != nil {
-			log.Fatal("Failed to Unmarshal medium: ", err)
-		}
+		CheckError("Failed to Unmarshal medium: ", err)
 		err = json.Unmarshal([]byte(tags), &tagsArr)
-		if err != nil {
-			log.Fatal("Failed to Unmarshal tags: ", err)
-		}
+		CheckError("Failed to Unmarshal tags: ", err)
 		mediumsStr := ConvertMedium(mediumsArr)
 		rows = append(rows, table.Row{title, GetTagsString(tagsArr), mediumsStr, Status_itos(intStatus), year, id})
 	}

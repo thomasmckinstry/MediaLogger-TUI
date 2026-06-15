@@ -2,6 +2,7 @@ package utils
 
 import (
 	"charm.land/bubbletea/v2"
+	"database/sql"
 	"strings"
 )
 
@@ -19,15 +20,6 @@ type ConfirmationMsg struct {
 }
 
 type WorkDetails []string
-
-// TODO: Define these with reading from the db
-const (
-	Pending int = iota
-	Started
-	Hiatus
-	Completed
-	Dropped
-)
 
 const (
 	HomePage int = iota
@@ -55,47 +47,46 @@ const ( // Table Column
 	Id
 )
 
-var statusName = map[int]string{
-	Pending:   "Pending",
-	Started:   "Started",
-	Hiatus:    "Hiatus",
-	Completed: "Completed",
-	Dropped:   "Dropped",
+var statusName = map[int]string{}
+
+var statusInt = map[string]int{}
+
+var mediumName = map[int]string{}
+
+var mediumInt = map[string]int{}
+
+func SetupStatuses(db *sql.DB) {
+	row, err := db.Query(`SELECT id, status_name FROM status_table;`)
+	CheckError("Failed to query status_table: ", err)
+	for row.Next() {
+		var (
+			name string
+			id   int
+		)
+
+		err = row.Scan(&id, &name)
+		CheckError("Failed to scan row from status_table: ", err)
+		statusName[id] = name
+		statusInt[name] = id
+	}
+	DebugLog("Statuses: ", statusName)
 }
 
-var statusInt = map[string]int{
-	"Pending":   Pending,
-	"Started":   Started,
-	"Hiatus":    Hiatus,
-	"Completed": Completed,
-	"Dropped":   Dropped,
-}
+func SetupMediums(db *sql.DB) {
+	row, err := db.Query(`SELECT id, type_name FROM media_type_table;`)
+	CheckError("Failed to query media_type_table: ", err)
+	for row.Next() {
+		var (
+			name string
+			id   int
+		)
 
-const (
-	Movie int = iota
-	Book
-	Comic
-	Show
-	Animated
-	Live_Action
-)
-
-var mediumName = map[int]string{
-	Movie:       "Movie",
-	Book:        "Book",
-	Comic:       "Comic",
-	Show:        "Show",
-	Animated:    "Animated",
-	Live_Action: "Live Action",
-}
-
-var mediumInt = map[string]int{
-	"Movie":       Movie,
-	"Book":        Book,
-	"Comic":       Comic,
-	"Show":        Show,
-	"Animated":    Animated,
-	"Live Action": Live_Action,
+		err = row.Scan(&id, &name)
+		CheckError("Failed to scan row from media_type_table: ", err)
+		mediumName[id] = name
+		mediumInt[name] = id
+	}
+	DebugLog("Mediums: ", mediumName)
 }
 
 func Status_stoi(status string) int {

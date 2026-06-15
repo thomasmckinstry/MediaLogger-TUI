@@ -26,4 +26,5 @@ func ReadConfig(filepath string) {
 	err = yaml.Unmarshal(file, &Config)
 	CheckError("Failed to unmarshal config: ", err)
 	SetTheme(Config.Theme.Focus, Config.Theme.Unfocus)
+	DebugLog("Config: ", Config)
 }
