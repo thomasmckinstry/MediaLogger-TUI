@@ -260,7 +260,7 @@ func (m *WorkFormModel) View() tea.View {
 		s += "\n"
 	}
 	isFocused := m.cursor == EnterForm
-	enter := RenderFocused(enterStyle, "CONFIRM", isFocused)
+	enter := RenderFocused(enterStyle, lipgloss.PlaceHorizontal(11, lipgloss.Center, "CONFIRM"), isFocused)
 	if m.errorMsg != "" {
 		enter = lipgloss.JoinVertical(lipgloss.Center, errorStyle.Render(m.errorMsg), enter)
 	}

@@ -34,8 +34,10 @@ var Config ConfigModel = ConfigModel{
 }
 
 func ReadConfig(filepath string) {
+	DebugLog("Config Filepath: ", filepath)
 	file, err := os.ReadFile(filepath)
-	if !errors.Is(err, os.ErrNotExist) {
+	DebugLog("Read Config Error: ", err)
+	if !errors.Is(err, os.ErrNotExist) && err != nil {
 		CheckError("Failed to read config: ", err)
 	}
 

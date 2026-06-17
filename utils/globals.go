@@ -47,6 +47,8 @@ const ( // Table Column
 	Id
 )
 
+var DirectoryPath string
+
 var statusName = map[int]string{}
 
 var statusInt = map[string]int{}

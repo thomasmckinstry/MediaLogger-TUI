@@ -15,6 +15,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/thomasmckinstry/MediaLogger-TUI/Views"
 	database "github.com/thomasmckinstry/MediaLogger-TUI/db"
+	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	. "github.com/thomasmckinstry/MediaLogger-TUI/utils"
 	"golang.org/x/term"
 )
@@ -131,8 +132,10 @@ func main() {
 	width, height, err = term.GetSize(1)
 	CheckError("Failed to get terminal size: ", err)
 
+	utils.DirectoryPath = "/home/" + os.Getenv("USER") + "/ouevre/"
+
 	if len(os.Getenv("DEBUG")) > 0 {
-		f, err := tea.LogToFile("debug.log", "debug")
+		f, err := tea.LogToFile(utils.DirectoryPath+"debug.log", "debug")
 		CheckError("Failed to set up debug logging: ", err)
 		defer func() {
 			err = f.Close()
@@ -146,7 +149,8 @@ func main() {
 		}()
 	}
 
-	ReadConfig("config.yaml")
+	ReadConfig(utils.DirectoryPath + "config.yaml")
+	//ReadConfig("config.yaml")
 
 	database.SetStatuses(Config.StatusOptions)
 	database.SetMediums(Config.MediaOptions)

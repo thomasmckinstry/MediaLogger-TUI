@@ -7,8 +7,6 @@ package db
 import (
 	"database/sql"
 	"github.com/thomasmckinstry/MediaLogger-TUI/utils"
-	"log"
-	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -23,13 +21,9 @@ func GetDB() *sql.DB {
 		return db
 	}
 
-	db, err = sql.Open("sqlite3", utils.Config.Database)
+	db, err = sql.Open("sqlite3", utils.DirectoryPath+utils.Config.Database)
 	utils.DebugLog("Created new database instance", nil)
-	if err != nil {
-		log.Fatal("Unable to open database:", err)
-
-		os.Exit(1)
-	}
+	utils.CheckError("Unable to open database:", err)
 	init_db(db)
 
 	return db
