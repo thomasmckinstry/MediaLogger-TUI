@@ -49,6 +49,7 @@ var defaultCheckboxMap = checkboxKeyMap{
 
 func (m *CheckboxModel) Clear() {
 	m.EntryVals = make([]bool, len(m.Entries))
+	m.cursor = 0
 }
 
 func (m *CheckboxModel) GetContents() []string {

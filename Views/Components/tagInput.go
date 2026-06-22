@@ -64,6 +64,7 @@ type TagInputModel struct {
 
 func (m *TagInputModel) Clear() {
 	m.Tags = []string{}
+	m.tagsCursor = 0
 	m.textInput.Reset()
 }
 

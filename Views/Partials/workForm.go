@@ -255,6 +255,7 @@ func (m *WorkFormModel) View() tea.View {
 		if formView.Cursor != nil {
 			c = formView.Cursor
 			c.Y += lipgloss.Height(s)
+			c.X += 1
 		}
 		s = lipgloss.JoinVertical(lipgloss.Left, s, RenderFocused(textinputStyle, formView.Content, i == m.cursor))
 		s += "\n"
