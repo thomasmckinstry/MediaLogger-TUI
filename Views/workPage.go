@@ -324,9 +324,9 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				var workMsg []string
 				if cmd != nil {
 					workMsg, ok = cmd().(NewWorkMsg)
-					cmds = tea.Batch(cmds, cmd)
 				}
 				if ok {
+					cmd = nil
 					DebugLog("addPage got NewWorkMsg: ", msg)
 					// ADDING TO DATABASE
 					db := database.GetDB()
@@ -354,9 +354,12 @@ func (m *WorkPageModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					err = query.Close()
 
 					CheckError("Failed to close insert to works table: ", err)
+
+					cmd = func() tea.Msg { return DeleteWorkMsg(m.currWorkId) }
+					cmds = tea.Batch(cmds, cmd)
+					cmd = func() tea.Msg { return NewWorkMsg(append(workMsg, strconv.Itoa(m.currWorkId))) }
+					DebugLog("Created DeleteWorkMsg: ", m.currWorkId)
 				}
-				cmd = func() tea.Msg { return DeleteWorkMsg(m.currWorkId) }
-				DebugLog("Created DeleteWorkMsg: ", m.currWorkId)
 			}
 			cmds = tea.Batch(cmds, cmd)
 		case key.Matches(msg, defaultWorkMap.Exit):

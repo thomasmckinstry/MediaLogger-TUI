@@ -2,6 +2,7 @@ package views
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -54,6 +55,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 			workMsg, ok = cmd().(NewWorkMsg)
 		}
 		if ok {
+			cmd = nil // Prevents sending NewWorkMsg twice after id is added
 			DebugLog("addPage got NewWorkMsg: ", msg)
 			cmds = tea.Batch(cmds, func() tea.Msg { return ViewMsg(0) })
 			// ADDING TO DATABASE
@@ -91,7 +93,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 
 			CheckError("Failed to close insert to works table: ", err)
 			cmds = tea.Batch(cmds, func() tea.Msg { return ViewMsg(0) })
-			cmds = tea.Batch(cmds, func() tea.Msg { return append(workMsg, string(id)) })
+			cmds = tea.Batch(cmds, func() tea.Msg { return NewWorkMsg(append(workMsg, strconv.Itoa(int(id)))) })
 		}
 		cmds = tea.Batch(cmds, cmd)
 	}

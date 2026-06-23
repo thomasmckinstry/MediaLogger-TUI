@@ -201,9 +201,8 @@ func (m *TagInputModel) View() tea.View {
 			continue
 		}
 		tagStr = lipgloss.PlaceHorizontal(m.width+2, lipgloss.Left, TruncateString(" - "+tag, m.width+2))
-		if index+m.tagStart == m.tagsCursor && !m.textInput.Focused() && m.selected { // Color selected field
-			tagStr = tagStyle.Render(tagStr)
-		}
+		isFocused = index+m.tagStart == m.tagsCursor && !m.textInput.Focused() && m.selected
+		RenderFocused(tagStyle, tagStr, isFocused)
 
 		if index == 0 {
 			tagStr = RenderFocused(tagsStyle, tagStr, isFocused)

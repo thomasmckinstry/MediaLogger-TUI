@@ -25,9 +25,6 @@ type checkboxKeyMap struct {
 	Unfocus key.Binding
 }
 
-var checkboxEntryStyle lipgloss.Style = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("#D17600"))
-
 var defaultCheckboxMap = checkboxKeyMap{
 	Up: key.NewBinding(
 		key.WithKeys("k", "up"),
@@ -118,9 +115,8 @@ func (m *CheckboxModel) View() tea.View {
 		}
 		entry = lipgloss.PlaceHorizontal(m.width-2, lipgloss.Center, medium)
 		entry = lipgloss.JoinHorizontal(lipgloss.Center, fmt.Sprintf(" [%s] ", check), entry)
-		if i == m.cursor && m.selected {
-			entry = checkboxEntryStyle.Render(entry)
-		}
+		isFocused := i == m.cursor && m.selected
+		entry = utils.RenderFocused(lipgloss.NewStyle(), entry, isFocused)
 		s = lipgloss.JoinVertical(lipgloss.Center, s, entry)
 	}
 	return tea.NewView(s)

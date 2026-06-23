@@ -112,16 +112,21 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case DeleteWorkMsg:
+		DebugLog("Deleting work of ID: ", int(msg))
 		rows := m.table.Rows()
 		for i, row := range rows {
 			currId, _ := strconv.Atoi(row[Id])
+			DebugLog("Viewing row: ", currId)
 			if currId == int(msg) {
+				DebugLog("Deleting row: ", currId)
 				rows = append(rows[:i], rows[i+1:]...)
 				break
 			}
 		}
 		m.table.SetRows(rows)
 	case NewWorkMsg:
+		DebugLog("List got new work: ", []string(msg))
+		DebugLog("New work of length: ", len(msg))
 		newRow := []string(msg)
 		rows := m.table.Rows()
 		var mediumsArr []int
@@ -136,7 +141,7 @@ func (m *ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		intStatus, _ := strconv.Atoi(newRow[StatusForm])
 		mediumsStr := ConvertMedium(mediumsArr)
-		rows = append(rows, table.Row{newRow[TitleForm], GetTagsString(tagsArr), mediumsStr, Status_itos(intStatus), newRow[YearForm]})
+		rows = append(rows, table.Row{newRow[TitleForm], GetTagsString(tagsArr), mediumsStr, Status_itos(intStatus), newRow[YearForm], newRow[Id]})
 		m.table.SetRows(rows)
 	case tea.WindowSizeMsg:
 		width := msg.Width - 29

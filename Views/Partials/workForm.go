@@ -105,13 +105,15 @@ func (m *WorkFormModel) Init() tea.Cmd {
 }
 
 func (m *WorkFormModel) Update(msg tea.Msg) (*WorkFormModel, tea.Cmd) {
-	var cmds tea.Cmd
-	var cmd tea.Cmd
+	var (
+		cmds, cmd tea.Cmd
+	)
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
 	case WorkDetails:
+		DebugLog("WorkPage got work: ", msg)
 		details := []string(msg)
 		for i, form := range m.forms {
 			switch form := form.(type) {
@@ -124,7 +126,7 @@ func (m *WorkFormModel) Update(msg tea.Msg) (*WorkFormModel, tea.Cmd) {
 			case *components.TagInputModel:
 				form.Tags = strings.Split(details[Tags], ", ")
 			case *components.CheckboxModel:
-				for _, entry := range strings.Split(details[Medium], ", ") {
+				for entry := range strings.SplitSeq(details[Medium], ", ") {
 					for i, formEntry := range form.Entries {
 						if entry == formEntry {
 							form.EntryVals[i] = true
@@ -182,7 +184,7 @@ func (m *WorkFormModel) Update(msg tea.Msg) (*WorkFormModel, tea.Cmd) {
 						CheckError("Failed to marshal input data to JSON: ", err)
 						content = string(marshaledContent)
 					case *components.ArrowModel:
-						content = string(Status_stoi(form.GetContents()))
+						content = strconv.Itoa(form.GetContents())
 					}
 					CheckError("Failed to marshal input data to JSON: ", err)
 					contents = append(contents, string(content))

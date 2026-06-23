@@ -29,20 +29,18 @@ var (
 type ArrowModel struct {
 	Options       []string
 	OptionsCursor int
-	selected      bool
 	title         string
 	width         int
 }
 
-func (m *ArrowModel) GetContents() string {
-	return m.Options[m.OptionsCursor]
+func (m *ArrowModel) GetContents() int {
+	return m.OptionsCursor
 }
 
 func InitialArrow(options []string, title string, width int, height int) ArrowModel {
 	return ArrowModel{
 		Options:       options,
 		OptionsCursor: 0,
-		selected:      false,
 		title:         title,
 		width:         width,
 	}
@@ -58,8 +56,6 @@ func (m *ArrowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, defaultArrowMap.Nav):
-			m.selected = !m.selected
 		case key.Matches(msg, defaultArrowMap.Right):
 			m.OptionsCursor = (m.OptionsCursor + 1) % len(m.Options)
 		case key.Matches(msg, defaultArrowMap.Left):
@@ -77,11 +73,6 @@ func (m *ArrowModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *ArrowModel) View() tea.View {
 	header := lipgloss.PlaceHorizontal(m.width, lipgloss.Center, m.title)
 	options := m.Options[m.OptionsCursor]
-	if m.selected {
-		options = arrowTextStyle.Foreground(lipgloss.Color("#D17600")).Render(options)
-	} else {
-		options = arrowTextStyle.Render(options)
-	}
 	contents := lipgloss.PlaceHorizontal(m.width, lipgloss.Center,
 		arrowContentStyle.Render(
 			lipgloss.JoinHorizontal(lipgloss.Center, "< ",
