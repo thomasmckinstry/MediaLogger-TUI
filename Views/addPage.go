@@ -69,7 +69,7 @@ func (m *AddModel) Update(msg tea.Msg) (*AddModel, tea.Cmd) {
 					RETURNING work_id
 				`)
 			CheckError("Failed to prepare insert statement: ", err)
-			statusInt := int(workMsg[StatusForm][0])
+			statusInt, err := strconv.Atoi(workMsg[StatusForm])
 			CheckError("Failed to convert string to int: ", err)
 			row, err := query.Exec(date, workMsg[TitleForm], workMsg[MediumForm], statusInt, workMsg[TagsForm], workMsg[YearForm])
 			id, err = row.LastInsertId()

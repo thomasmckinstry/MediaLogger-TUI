@@ -68,7 +68,7 @@ func SetupStatuses(db *sql.DB) {
 
 		err = row.Scan(&id, &name)
 		CheckError("Failed to scan row from status_table: ", err)
-		statusName[id] = name
+		statusName[id-1] = name
 		statusInt[name] = id
 	}
 	DebugLog("Statuses: ", statusName)
@@ -85,7 +85,7 @@ func SetupMediums(db *sql.DB) {
 
 		err = row.Scan(&id, &name)
 		CheckError("Failed to scan row from media_type_table: ", err)
-		mediumName[id] = name
+		mediumName[id-1] = name
 		mediumInt[name] = id
 	}
 	DebugLog("Mediums: ", mediumName)
