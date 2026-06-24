@@ -5,6 +5,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	"charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/thomasmckinstry/ouevre/utils"
 	. "github.com/thomasmckinstry/ouevre/utils"
 )
 
@@ -41,10 +42,10 @@ var defaultTagMap = tagKeyMap{
 
 var (
 	tagStyle lipgloss.Style = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#D17600"))
+			Foreground(utils.Focused)
 	tagsStyle lipgloss.Style = lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("#6E3F00")).
+			BorderForeground(Unfocused).
 			BorderTop(true)
 )
 
@@ -183,10 +184,10 @@ func (m *TagInputModel) View() tea.View {
 	s = lipgloss.PlaceHorizontal(m.width, lipgloss.Center, m.title)
 	if m.textInput.Focused() {
 		c.Y += lipgloss.Height(s)
-		//c.X += 1 // Aligns it correctly with the text
+		c.X += 1 // Aligns it correctly with the text
 	}
 
-	clipped := lipgloss.NewStyle().MaxWidth(m.width).Render(m.textInput.View())
+	clipped := lipgloss.NewStyle().MaxWidth(m.width + 1).Render(m.textInput.View())
 	s = lipgloss.JoinVertical(lipgloss.Left, s, clipped)
 
 	isFocused := m.selected && !m.textInput.Focused()
@@ -202,10 +203,12 @@ func (m *TagInputModel) View() tea.View {
 		}
 		tagStr = lipgloss.PlaceHorizontal(m.width+2, lipgloss.Left, TruncateString(" - "+tag, m.width+2))
 		isFocused = index+m.tagStart == m.tagsCursor && !m.textInput.Focused() && m.selected
-		RenderFocused(tagStyle, tagStr, isFocused)
+		if isFocused && m.selected {
+			tagStr = tagStyle.Render(tagStr)
+		}
 
 		if index == 0 {
-			tagStr = RenderFocused(tagsStyle, tagStr, isFocused)
+			tagStr = tagsStyle.BorderForeground(Focused).Render(tagStr)
 		}
 
 		s = lipgloss.JoinVertical(lipgloss.Left, s, tagStr)

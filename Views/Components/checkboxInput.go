@@ -116,7 +116,9 @@ func (m *CheckboxModel) View() tea.View {
 		entry = lipgloss.PlaceHorizontal(m.width-2, lipgloss.Center, medium)
 		entry = lipgloss.JoinHorizontal(lipgloss.Center, fmt.Sprintf(" [%s] ", check), entry)
 		isFocused := i == m.cursor && m.selected
-		entry = utils.RenderFocused(lipgloss.NewStyle(), entry, isFocused)
+		if isFocused {
+			entry = lipgloss.NewStyle().Foreground(utils.Focused).Render(entry)
+		}
 		s = lipgloss.JoinVertical(lipgloss.Center, s, entry)
 	}
 	return tea.NewView(s)

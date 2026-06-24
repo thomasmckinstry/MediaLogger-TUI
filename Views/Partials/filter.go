@@ -216,7 +216,7 @@ func (m *FilterModel) View() tea.View {
 			c.X += 1
 		}
 		isFocused := m.cursor == i
-		s = lipgloss.JoinVertical(lipgloss.Center, s, RenderFocused(textinputStyle, formView.Content, isFocused))
+		s = lipgloss.JoinVertical(lipgloss.Left, s, RenderFocused(textinputStyle, formView.Content, isFocused))
 	}
 	isFocused := m.cursor == enter
 	enter := RenderFocused(enterStyle, lipgloss.PlaceHorizontal(15, lipgloss.Center, "ENTER"), isFocused)
